@@ -192,6 +192,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ COMPREHENSIVE TEST PASSED: Main app layout working perfectly. Header with King Julien branding visible, stats badges showing (0 countries, 0 visits due to API issues), view tabs (Globe/Map/List) all functional and clickable. Mobile responsive design working correctly. UI structure is solid."
+      - working: true
+        agent: "testing"
+        comment: "✅ UPDATED TEST RESULTS: Statistics section now working correctly with real data. Countries database expansion successful - showing 'Countries Remaining: 191' which confirms expansion from ~54 to ~195 total countries. Current stats display: Countries Visited: 2, Total Restaurant Visits: 4, Countries Remaining: 191. All navigation and view switching working perfectly."
 
   - task: "Globe View Component"
     implemented: true
