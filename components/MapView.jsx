@@ -48,7 +48,17 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
             {({ geographies }) =>
               geographies.map((geo) => {
                 const countryCode = geo.properties.ISO_A2
-                const countryData = countriesData.find(c => c.country_code === countryCode)
+                const countryCode3 = geo.properties.ISO_A3
+                
+                // Debug: log a few countries to see the codes
+                if (['FR', 'IN', 'IT', 'JP', 'MX', 'TH'].includes(countryCode) || ['FRA', 'IND', 'ITA', 'JPN', 'MEX', 'THA'].includes(countryCode3)) {
+                  console.log(`Country: ${geo.properties.NAME}, ISO_A2: ${countryCode}, ISO_A3: ${countryCode3}`)
+                }
+                
+                // Try matching both 2-letter and 3-letter codes
+                const countryData = countriesData.find(c => 
+                  c.country_code === countryCode || c.country_code === countryCode3
+                )
                 const visitCount = countryData?.visit_count || 0
                 const fillColor = colorForCount(visitCount, maxVisitCount)
                 
