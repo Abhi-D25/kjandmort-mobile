@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { colorForCount, getStrokeColor, GLOBE_OUTLINES_ENABLED } from '@/lib/color'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Map, Globe } from 'lucide-react'
+import { Map as MapIcon, Globe as GlobeIcon } from 'lucide-react'
 
 // Dynamically import Globe component to avoid SSR issues
 const Globe = dynamic(() => import('react-globe.gl'), { 
