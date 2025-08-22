@@ -206,6 +206,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
         countryName={popupData.countryName}
         countryData={popupData.countryData}
         restaurants={popupData.restaurants}
+        onDataRefresh={onCountryClick} // Trigger parent to refresh data
       />
     </>
   )
