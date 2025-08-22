@@ -21,6 +21,8 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
     if (!countryName) return
     
     try {
+      console.log(`🗺️ Clicked on country: ${countryName}`)
+      
       // Name-based mapping for major countries (since geo data only has country names)
       const nameToCode3 = {
         'France': 'FRA', 'India': 'IND', 'Italy': 'ITA', 'Japan': 'JPN', 'Mexico': 'MEX', 'Thailand': 'THA',
@@ -64,30 +66,19 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
         )
       }
       
-      let restaurants = []
+      console.log(`🔍 Found country data:`, countryData)
       
-      // If country has visits, fetch restaurant data
-      if (countryData && countryData.visit_count > 0) {
-        try {
-          const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
-          if (response.ok) {
-            restaurants = await response.json()
-          }
-        } catch (error) {
-          console.error('Error fetching restaurants:', error)
-        }
-      }
-      
-      // Open popup with country data
+      // Open popup with country data - CountryPopup will handle loading restaurants
       setPopupData({
         isOpen: true,
         countryName,
         countryData: countryData || { 
           name: countryName, 
           cuisine_style: 'Local', 
-          visit_count: 0 
+          visit_count: 0,
+          id: null
         },
-        restaurants
+        restaurants: [] // Will be loaded by CountryPopup
       })
       
     } catch (error) {
@@ -102,6 +93,14 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
       countryData: null,
       restaurants: []
     })
+  }
+
+  // Handle data refresh from popup (when visits are added/edited/deleted)
+  const handleDataRefresh = () => {
+    console.log('🔄 Data refresh requested from popup')
+    if (onCountryClick) {
+      onCountryClick() // This should trigger parent to reload countries data
+    }
   }
 
   if (isLoading) {
@@ -171,6 +170,11 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                   const visitCount = countryData?.visit_count || 0
                   const fillColor = colorForCount(visitCount, maxVisitCount)
                   
+                  // Debug log for countries with visits
+                  if (visitCount > 0) {
+                    console.log(`🎨 ${countryName}: ${visitCount} visits, Color: ${fillColor}`)
+                  }
+                  
                   return (
                     <Geography
                       key={`${geo.rsmKey}-${index}`}
@@ -216,7 +220,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
         countryName={popupData.countryName}
         countryData={popupData.countryData}
         restaurants={popupData.restaurants}
-        onDataRefresh={onDataRefresh} // Trigger parent to refresh data
+        onDataRefresh={handleDataRefresh}
       />
     </>
   )
