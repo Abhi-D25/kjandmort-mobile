@@ -3,30 +3,105 @@
 import { useEffect, useState } from 'react'
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps'
 import { colorForCount } from '@/lib/color'
+import CountryPopup from './CountryPopup'
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
 
 export default function MapView({ countriesData = [], maxVisitCount, onCountryClick, isLoading }) {
+  const [popupData, setPopupData] = useState({
+    isOpen: false,
+    countryName: '',
+    countryData: null,
+    restaurants: []
+  })
 
   const handleGeographyClick = async (geo) => {
-    const countryCode = geo.properties.ISO_A2
-    if (countryCode && onCountryClick) {
-      // Create mapping for finding the right country data
-      const code2to3 = {
-        'FR': 'FRA', 'IN': 'IND', 'IT': 'ITA', 'JP': 'JPN', 'MX': 'MEX', 'TH': 'THA',
-        'US': 'USA', 'CA': 'CAN', 'GB': 'GBR', 'DE': 'DEU', 'ES': 'ESP', 'AU': 'AUS',
-        'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR'
+    const countryName = geo.properties.NAME || geo.properties.name
+    
+    if (!countryName) return
+    
+    try {
+      // Name-based mapping for major countries (since geo data only has country names)
+      const nameToCode3 = {
+        'France': 'FRA', 'India': 'IND', 'Italy': 'ITA', 'Japan': 'JPN', 'Mexico': 'MEX', 'Thailand': 'THA',
+        'United States of America': 'USA', 'United States': 'USA', 'China': 'CHN', 'Germany': 'DEU', 
+        'Brazil': 'BRA', 'United Kingdom': 'GBR', 'Canada': 'CAN', 'Australia': 'AUS', 'Russia': 'RUS',
+        'Argentina': 'ARG', 'Chile': 'CHL', 'Peru': 'PER', 'Colombia': 'COL', 'Venezuela': 'VEN',
+        'Spain': 'ESP', 'Portugal': 'PRT', 'Netherlands': 'NLD', 'Belgium': 'BEL', 'Switzerland': 'CHE',
+        'Austria': 'AUT', 'Sweden': 'SWE', 'Norway': 'NOR', 'Denmark': 'DNK', 'Finland': 'FIN',
+        'Poland': 'POL', 'Czech Republic': 'CZE', 'Hungary': 'HUN', 'Romania': 'ROU', 'Ukraine': 'UKR',
+        'Turkey': 'TUR', 'Greece': 'GRC', 'Bulgaria': 'BGR', 'Serbia': 'SRB', 'Croatia': 'HRV',
+        'South Africa': 'ZAF', 'Egypt': 'EGY', 'Nigeria': 'NGA', 'Kenya': 'KEN', 'Ethiopia': 'ETH',
+        'Morocco': 'MAR', 'Algeria': 'DZA', 'Libya': 'LBY', 'Sudan': 'SDN', 'Tunisia': 'TUN',
+        'South Korea': 'KOR', 'North Korea': 'PRK', 'Mongolia': 'MNG', 'Kazakhstan': 'KAZ', 
+        'Iran': 'IRN', 'Iraq': 'IRQ', 'Saudi Arabia': 'SAU', 'Israel': 'ISR', 'Jordan': 'JOR',
+        'Indonesia': 'IDN', 'Malaysia': 'MYS', 'Philippines': 'PHL', 'Vietnam': 'VNM', 'Myanmar': 'MMR',
+        'Bangladesh': 'BGD', 'Pakistan': 'PAK', 'Afghanistan': 'AFG', 'Sri Lanka': 'LKA', 'Nepal': 'NPL',
+        'New Zealand': 'NZL', 'Papua New Guinea': 'PNG', 'Madagascar': 'MDG', 'Tanzania': 'TZA',
+        'Mozambique': 'MOZ', 'Zimbabwe': 'ZWE', 'Botswana': 'BWA', 'Namibia': 'NAM', 'Zambia': 'ZMB',
+        'Angola': 'AGO', 'Democratic Republic of the Congo': 'COD', 'Republic of the Congo': 'COG',
+        'Central African Republic': 'CAF', 'Chad': 'TCD', 'Niger': 'NER', 'Mali': 'MLI', 'Burkina Faso': 'BFA',
+        'Senegal': 'SEN', 'Guinea': 'GIN', 'Sierra Leone': 'SLE', 'Liberia': 'LBR', 'Ivory Coast': 'CIV',
+        'Ghana': 'GHA', 'Togo': 'TGO', 'Benin': 'BEN', 'Cameroon': 'CMR', 'Equatorial Guinea': 'GNQ',
+        'Gabon': 'GAB', 'Uruguay': 'URY', 'Paraguay': 'PRY', 'Bolivia': 'BOL', 'Ecuador': 'ECU',
+        'Guyana': 'GUY', 'Suriname': 'SUR', 'French Guiana': 'GUF'
       }
       
-      // Try to find country data
-      let countryData = countriesData.find(c => c.country_code === countryCode)
-      if (!countryData && code2to3[countryCode]) {
-        countryData = countriesData.find(c => c.country_code === code2to3[countryCode])
+      // Find country data using name-based mapping
+      let countryData = null
+      const mappedCode3 = nameToCode3[countryName]
+      
+      if (mappedCode3) {
+        countryData = countriesData.find(c => c.country_code === mappedCode3)
       }
       
-      const visitCount = countryData?.visit_count || 0
-      onCountryClick(countryCode, visitCount)
+      // Fallback: try to find by similar name
+      if (!countryData) {
+        countryData = countriesData.find(c => 
+          c.name.toLowerCase() === countryName.toLowerCase() ||
+          countryName.toLowerCase().includes(c.name.toLowerCase()) ||
+          c.name.toLowerCase().includes(countryName.toLowerCase())
+        )
+      }
+      
+      let restaurants = []
+      
+      // If country has visits, fetch restaurant data
+      if (countryData && countryData.visit_count > 0) {
+        try {
+          const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
+          if (response.ok) {
+            restaurants = await response.json()
+          }
+        } catch (error) {
+          console.error('Error fetching restaurants:', error)
+        }
+      }
+      
+      // Open popup with country data
+      setPopupData({
+        isOpen: true,
+        countryName,
+        countryData: countryData || { 
+          name: countryName, 
+          cuisine_style: 'Local', 
+          visit_count: 0 
+        },
+        restaurants
+      })
+      
+    } catch (error) {
+      console.error('Error handling country click:', error)
     }
+  }
+
+  const closePopup = () => {
+    setPopupData({
+      isOpen: false,
+      countryName: '',
+      countryData: null,
+      restaurants: []
+    })
   }
 
   if (isLoading) {
@@ -41,122 +116,91 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
   }
 
   return (
-    <div className="w-full h-full bg-blue-50">
-      <ComposableMap
-        projection="geoMercator"
-        projectionConfig={{
-          scale: 120,
-          center: [0, 0]
-        }}
-        width={800}
-        height={600}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <ZoomableGroup>
-          <Geographies geography={geoUrl}>
-            {({ geographies }) =>
-              geographies.map((geo) => {
-                // Log available properties for debugging
-                if (!geo.debugLogged) {
-                  console.log('🔍 Available geo properties:', Object.keys(geo.properties))
-                  geo.debugLogged = true
-                }
-                
-                // Try different property names that might contain country codes
-                const props = geo.properties
-                const countryCode2 = props.ISO_A2 || props.iso_a2 || props.adm0_a3 || props.ADM0_A3
-                const countryName = props.NAME || props.name || props.NAME_EN || props.name_en
-                
-                // Create comprehensive mapping for 2-letter to 3-letter codes
-                const code2to3 = {
-                  'FR': 'FRA', 'IN': 'IND', 'IT': 'ITA', 'JP': 'JPN', 'MX': 'MEX', 'TH': 'THA',
-                  'US': 'USA', 'CA': 'CAN', 'GB': 'GBR', 'DE': 'DEU', 'ES': 'ESP', 'AU': 'AUS',
-                  'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR', 'AR': 'ARG', 'CL': 'CHL',
-                  'PE': 'PER', 'CO': 'COL', 'VE': 'VEN', 'EC': 'ECU', 'BO': 'BOL', 'UY': 'URY',
-                  'PY': 'PRY', 'GY': 'GUY', 'SR': 'SUR', 'FK': 'FLK', 'GF': 'GUF', 'ZA': 'ZAF',
-                  'EG': 'EGY', 'LY': 'LBY', 'SD': 'SDN', 'TD': 'TCD', 'NE': 'NER', 'ML': 'MLI',
-                  'MR': 'MRT', 'SN': 'SEN', 'GM': 'GMB', 'GW': 'GNB', 'GN': 'GIN', 'SL': 'SLE',
-                  'LR': 'LBR', 'CI': 'CIV', 'GH': 'GHA', 'TG': 'TGO', 'BJ': 'BEN', 'BF': 'BFA',
-                  'NR': 'NRU', 'NG': 'NGA', 'CM': 'CMR', 'CF': 'CAF', 'GQ': 'GNQ', 'GA': 'GAB',
-                  'CG': 'COG', 'CD': 'COD', 'AO': 'AGO', 'ZM': 'ZMB', 'ZW': 'ZWE', 'NA': 'NAM',
-                  'BW': 'BWA', 'SZ': 'SWZ', 'LS': 'LSO', 'MZ': 'MOZ', 'MW': 'MWI', 'TZ': 'TZA',
-                  'KE': 'KEN', 'UG': 'UGA', 'RW': 'RWA', 'BI': 'BDI', 'ET': 'ETH', 'ER': 'ERI',
-                  'DJ': 'DJI', 'SO': 'SOM', 'MG': 'MDG', 'MU': 'MUS', 'SC': 'SYC', 'KM': 'COM'
-                }
-                
-                // Name-based mapping as fallback for major countries
-                const nameToCode3 = {
-                  'France': 'FRA',
-                  'India': 'IND', 
-                  'Italy': 'ITA',
-                  'Japan': 'JPN',
-                  'Mexico': 'MEX',
-                  'Thailand': 'THA',
-                  'United States of America': 'USA',
-                  'United States': 'USA',
-                  'China': 'CHN',
-                  'Germany': 'DEU',
-                  'Brazil': 'BRA',
-                  'United Kingdom': 'GBR'
-                }
-                
-                // Try to find country data using multiple approaches
-                let countryData = null
-                
-                // First try direct 2-letter code match (for future 2-letter database)
-                if (countryCode2) {
-                  countryData = countriesData.find(c => c.country_code === countryCode2)
-                }
-                
-                // Then try 2-letter to 3-letter conversion (for current 3-letter database)
-                if (!countryData && countryCode2 && code2to3[countryCode2]) {
-                  countryData = countriesData.find(c => c.country_code === code2to3[countryCode2])
-                }
-                
-                // Finally try name-based matching
-                if (!countryData && countryName && nameToCode3[countryName]) {
-                  countryData = countriesData.find(c => c.country_code === nameToCode3[countryName])
-                }
-                
-                const visitCount = countryData?.visit_count || 0
-                const fillColor = colorForCount(visitCount, maxVisitCount)
-                
-                // Log debug info for countries with visits or specific test countries
-                if (visitCount > 0 || ['France', 'India', 'Italy', 'Japan', 'Mexico', 'Thailand'].includes(countryName)) {
-                  console.log(`🗺️ ${countryName} (${countryCode2}→${code2to3[countryCode2] || nameToCode3[countryName]}): ${visitCount} visits, Color: ${fillColor}`)
-                }
-                
-                return (
-                  <Geography
-                    key={geo.rsmKey}
-                    geography={geo}
-                    fill={fillColor}
-                    stroke="#666"
-                    strokeWidth={0.5}
-                    onClick={() => handleGeographyClick(geo)}
-                    style={{
-                      default: {
-                        outline: "none",
-                        cursor: "pointer"
-                      },
-                      hover: {
-                        fill: visitCount > 0 ? "#7C3AED" : "#E9D5FF",
-                        outline: "none",
-                        cursor: "pointer"
-                      },
-                      pressed: {
-                        fill: "#7C3AED",
-                        outline: "none",
-                        cursor: "pointer"
-                      },
-                    }}
-                  />
-                )
-              })
-            }
-          </Geographies>
-        </ZoomableGroup>
-      </ComposableMap>
-    </div>
+    <>
+      <div className="w-full h-full bg-blue-50">
+        <ComposableMap
+          projection="geoMercator"
+          projectionConfig={{
+            scale: 120,
+            center: [0, 0]
+          }}
+          width={800}
+          height={600}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <ZoomableGroup>
+            <Geographies geography={geoUrl}>
+              {({ geographies }) =>
+                geographies.map((geo) => {
+                  const countryName = geo.properties.NAME || geo.properties.name
+                  
+                  // Name-based mapping for finding country data
+                  const nameToCode3 = {
+                    'France': 'FRA', 'India': 'IND', 'Italy': 'ITA', 'Japan': 'JPN', 'Mexico': 'MEX', 'Thailand': 'THA',
+                    'United States of America': 'USA', 'United States': 'USA', 'China': 'CHN', 'Germany': 'DEU', 
+                    'Brazil': 'BRA', 'United Kingdom': 'GBR', 'Canada': 'CAN', 'Australia': 'AUS', 'Russia': 'RUS'
+                  }
+                  
+                  // Try to find country data
+                  let countryData = null
+                  const mappedCode3 = nameToCode3[countryName]
+                  
+                  if (mappedCode3) {
+                    countryData = countriesData.find(c => c.country_code === mappedCode3)
+                  }
+                  
+                  // Fallback: try name matching
+                  if (!countryData) {
+                    countryData = countriesData.find(c => 
+                      c.name.toLowerCase() === countryName.toLowerCase() ||
+                      countryName.toLowerCase().includes(c.name.toLowerCase()) ||
+                      c.name.toLowerCase().includes(countryName.toLowerCase())
+                    )
+                  }
+                  
+                  const visitCount = countryData?.visit_count || 0
+                  const fillColor = colorForCount(visitCount, maxVisitCount)
+                  
+                  return (
+                    <Geography
+                      key={geo.rsmKey}
+                      geography={geo}
+                      fill={fillColor}
+                      stroke="#666"
+                      strokeWidth={0.5}
+                      onClick={() => handleGeographyClick(geo)}
+                      style={{
+                        default: {
+                          outline: "none",
+                          cursor: "pointer"
+                        },
+                        hover: {
+                          fill: visitCount > 0 ? "#7C3AED" : "#E9D5FF",
+                          outline: "none",
+                          cursor: "pointer"
+                        },
+                        pressed: {
+                          fill: "#7C3AED",
+                          outline: "none",
+                          cursor: "pointer"
+                        },
+                      }}
+                    />
+                  )
+                })
+              }
+            </Geographies>
+          </ZoomableGroup>
+        </ComposableMap>
+      </div>
+      
+      <CountryPopup
+        isOpen={popupData.isOpen}
+        onClose={closePopup}
+        countryName={popupData.countryName}
+        countryData={popupData.countryData}
+        restaurants={popupData.restaurants}
+      />
+    </>
   )
 }
