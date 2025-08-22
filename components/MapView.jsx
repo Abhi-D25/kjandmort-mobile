@@ -56,8 +56,16 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                const countryCode2 = geo.properties.ISO_A2
-                const countryName = geo.properties.NAME || geo.properties.name
+                // Log available properties for debugging
+                if (!geo.debugLogged) {
+                  console.log('🔍 Available geo properties:', Object.keys(geo.properties))
+                  geo.debugLogged = true
+                }
+                
+                // Try different property names that might contain country codes
+                const props = geo.properties
+                const countryCode2 = props.ISO_A2 || props.iso_a2 || props.adm0_a3 || props.ADM0_A3
+                const countryName = props.NAME || props.name || props.NAME_EN || props.name_en
                 
                 // Create comprehensive mapping for 2-letter to 3-letter codes
                 const code2to3 = {
@@ -76,6 +84,22 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                   'DJ': 'DJI', 'SO': 'SOM', 'MG': 'MDG', 'MU': 'MUS', 'SC': 'SYC', 'KM': 'COM'
                 }
                 
+                // Name-based mapping as fallback for major countries
+                const nameToCode3 = {
+                  'France': 'FRA',
+                  'India': 'IND', 
+                  'Italy': 'ITA',
+                  'Japan': 'JPN',
+                  'Mexico': 'MEX',
+                  'Thailand': 'THA',
+                  'United States of America': 'USA',
+                  'United States': 'USA',
+                  'China': 'CHN',
+                  'Germany': 'DEU',
+                  'Brazil': 'BRA',
+                  'United Kingdom': 'GBR'
+                }
+                
                 // Try to find country data using multiple approaches
                 let countryData = null
                 
@@ -89,12 +113,17 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                   countryData = countriesData.find(c => c.country_code === code2to3[countryCode2])
                 }
                 
+                // Finally try name-based matching
+                if (!countryData && countryName && nameToCode3[countryName]) {
+                  countryData = countriesData.find(c => c.country_code === nameToCode3[countryName])
+                }
+                
                 const visitCount = countryData?.visit_count || 0
                 const fillColor = colorForCount(visitCount, maxVisitCount)
                 
                 // Log debug info for countries with visits or specific test countries
                 if (visitCount > 0 || ['France', 'India', 'Italy', 'Japan', 'Mexico', 'Thailand'].includes(countryName)) {
-                  console.log(`🗺️ ${countryName} (${countryCode2}→${code2to3[countryCode2] || countryCode2}): ${visitCount} visits, Color: ${fillColor}`)
+                  console.log(`🗺️ ${countryName} (${countryCode2}→${code2to3[countryCode2] || nameToCode3[countryName]}): ${visitCount} visits, Color: ${fillColor}`)
                 }
                 
                 return (
