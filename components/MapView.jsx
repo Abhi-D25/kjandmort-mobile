@@ -11,11 +11,20 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
   const handleGeographyClick = async (geo) => {
     const countryCode = geo.properties.ISO_A2
     if (countryCode && onCountryClick) {
-      // Get visit count for this country
-      const countryData = countriesData.find(c => c.country_code === countryCode)
-      const visitCount = countryData?.visit_count || 0
+      // Create mapping for finding the right country data
+      const code2to3 = {
+        'FR': 'FRA', 'IN': 'IND', 'IT': 'ITA', 'JP': 'JPN', 'MX': 'MEX', 'TH': 'THA',
+        'US': 'USA', 'CA': 'CAN', 'GB': 'GBR', 'DE': 'DEU', 'ES': 'ESP', 'AU': 'AUS',
+        'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR'
+      }
       
-      // Pass both country code and visit count to parent handler
+      // Try to find country data
+      let countryData = countriesData.find(c => c.country_code === countryCode)
+      if (!countryData && code2to3[countryCode]) {
+        countryData = countriesData.find(c => c.country_code === code2to3[countryCode])
+      }
+      
+      const visitCount = countryData?.visit_count || 0
       onCountryClick(countryCode, visitCount)
     }
   }
@@ -47,42 +56,45 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                // Try different property names for country codes
                 const countryCode2 = geo.properties.ISO_A2
-                const countryCode3 = geo.properties.ISO_A3 || geo.properties.ADM0_A3
                 const countryName = geo.properties.NAME || geo.properties.name
                 
-                // Create mapping for 2-letter to 3-letter codes for visited countries
+                // Create comprehensive mapping for 2-letter to 3-letter codes
                 const code2to3 = {
                   'FR': 'FRA', 'IN': 'IND', 'IT': 'ITA', 'JP': 'JPN', 'MX': 'MEX', 'TH': 'THA',
                   'US': 'USA', 'CA': 'CAN', 'GB': 'GBR', 'DE': 'DEU', 'ES': 'ESP', 'AU': 'AUS',
-                  'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR'
+                  'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR', 'AR': 'ARG', 'CL': 'CHL',
+                  'PE': 'PER', 'CO': 'COL', 'VE': 'VEN', 'EC': 'ECU', 'BO': 'BOL', 'UY': 'URY',
+                  'PY': 'PRY', 'GY': 'GUY', 'SR': 'SUR', 'FK': 'FLK', 'GF': 'GUF', 'ZA': 'ZAF',
+                  'EG': 'EGY', 'LY': 'LBY', 'SD': 'SDN', 'TD': 'TCD', 'NE': 'NER', 'ML': 'MLI',
+                  'MR': 'MRT', 'SN': 'SEN', 'GM': 'GMB', 'GW': 'GNB', 'GN': 'GIN', 'SL': 'SLE',
+                  'LR': 'LBR', 'CI': 'CIV', 'GH': 'GHA', 'TG': 'TGO', 'BJ': 'BEN', 'BF': 'BFA',
+                  'NR': 'NRU', 'NG': 'NGA', 'CM': 'CMR', 'CF': 'CAF', 'GQ': 'GNQ', 'GA': 'GAB',
+                  'CG': 'COG', 'CD': 'COD', 'AO': 'AGO', 'ZM': 'ZMB', 'ZW': 'ZWE', 'NA': 'NAM',
+                  'BW': 'BWA', 'SZ': 'SWZ', 'LS': 'LSO', 'MZ': 'MOZ', 'MW': 'MWI', 'TZ': 'TZA',
+                  'KE': 'KEN', 'UG': 'UGA', 'RW': 'RWA', 'BI': 'BDI', 'ET': 'ETH', 'ER': 'ERI',
+                  'DJ': 'DJI', 'SO': 'SOM', 'MG': 'MDG', 'MU': 'MUS', 'SC': 'SYC', 'KM': 'COM'
                 }
                 
-                // Try to find country data by various methods
+                // Try to find country data using multiple approaches
                 let countryData = null
                 
-                // First try direct 2-letter code match (for new database structure)
+                // First try direct 2-letter code match (for future 2-letter database)
                 if (countryCode2) {
                   countryData = countriesData.find(c => c.country_code === countryCode2)
                 }
                 
-                // Then try 2-letter code converted to 3-letter (for existing database)
+                // Then try 2-letter to 3-letter conversion (for current 3-letter database)
                 if (!countryData && countryCode2 && code2to3[countryCode2]) {
                   countryData = countriesData.find(c => c.country_code === code2to3[countryCode2])
-                }
-                
-                // Finally try 3-letter code match (for existing database)
-                if (!countryData && countryCode3) {
-                  countryData = countriesData.find(c => c.country_code === countryCode3)
                 }
                 
                 const visitCount = countryData?.visit_count || 0
                 const fillColor = colorForCount(visitCount, maxVisitCount)
                 
-                // Debug log for countries with visits
-                if (visitCount > 0) {
-                  console.log(`🗺️ Found visited country: ${countryName} (${countryCode2}→${code2to3[countryCode2] || countryCode3}), Visits: ${visitCount}, Color: ${fillColor}`)
+                // Log debug info for countries with visits or specific test countries
+                if (visitCount > 0 || ['France', 'India', 'Italy', 'Japan', 'Mexico', 'Thailand'].includes(countryName)) {
+                  console.log(`🗺️ ${countryName} (${countryCode2}→${code2to3[countryCode2] || countryCode2}): ${visitCount} visits, Color: ${fillColor}`)
                 }
                 
                 return (
