@@ -126,12 +126,12 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
           }}
           width={800}
           height={600}
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", cursor: "pointer" }}
         >
           <ZoomableGroup>
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
-                geographies.map((geo) => {
+                geographies.map((geo, index) => {
                   const countryName = geo.properties.NAME || geo.properties.name
                   
                   // Name-based mapping for finding country data
