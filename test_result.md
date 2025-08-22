@@ -287,13 +287,18 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus: []
-  stuck_tasks: []
+  current_focus:
+    - "API Routing Infrastructure"
+  stuck_tasks:
+    - "API Routing Infrastructure"
+    - "Add Visit Form"
   test_all: false
-  test_priority: "high_first"
+  test_priority: "critical_first"
 
 agent_communication:
   - agent: "main"
     message: "Initial implementation complete. All backend API routes implemented and connected to user's existing Supabase database. Frontend components created but need testing. Ready for backend testing first."
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: All 4 high-priority backend API endpoints tested and working perfectly. Comprehensive testing performed including: GET /api/aggregate (countries with visit counts), GET /api/countries (dropdown data), GET /api/country?code=XX (country details with restaurants), POST /api/visit (add visits with fusion support). All endpoints return correct data structures, handle validation properly, and integrate correctly with Supabase database. Visit counts and color intensity are automatically updated. Ready for frontend testing or deployment."
+  - agent: "testing"
+    message: "🚨 CRITICAL ISSUE IDENTIFIED: Frontend UI components are beautifully implemented and working correctly, but there's a critical API routing infrastructure problem. External domain (https://julien-eats.preview.emergentagent.com/api/*) returns 502 errors while local APIs work perfectly. This breaks all data loading. IMMEDIATE ACTION REQUIRED: Fix Kubernetes ingress routing for /api/* paths. All frontend functionality depends on this fix."
