@@ -307,9 +307,9 @@ metadata:
 test_plan:
   current_focus:
     - "API Routing Infrastructure"
+    - "Edit and Delete Restaurant Visits"
   stuck_tasks:
     - "API Routing Infrastructure"
-    - "Add Visit Form"
   test_all: false
   test_priority: "critical_first"
 
