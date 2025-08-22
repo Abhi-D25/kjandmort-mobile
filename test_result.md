@@ -278,7 +278,7 @@ frontend:
     status_history:
       - working: false
         agent: "testing"
-        comment: "❌ CRITICAL INFRASTRUCTURE ISSUE: External domain (https://julien-eats.preview.emergentagent.com/api/*) returns 502 errors for all API endpoints, while local endpoints (http://localhost:3000/api/*) work perfectly. This breaks all frontend data loading. All API endpoints (/api/aggregate, /api/cuisines, /api/countries, /api/visit) are implemented correctly and return proper data locally. Issue is with Kubernetes ingress routing configuration."
+        comment: "❌ CRITICAL INFRASTRUCTURE ISSUE: External domain (https://cuisine-tracker-2.preview.emergentagent.com/api/*) returns 502 errors for all API endpoints, while local endpoints (http://localhost:3000/api/*) work perfectly. This breaks all frontend data loading. All API endpoints (/api/aggregate, /api/cuisines, /api/countries, /api/visit) are implemented correctly and return proper data locally. Issue is with Kubernetes ingress routing configuration."
 
 metadata:
   created_by: "main_agent"
@@ -301,4 +301,4 @@ agent_communication:
   - agent: "testing"
     message: "✅ BACKEND TESTING COMPLETE: All 4 high-priority backend API endpoints tested and working perfectly. Comprehensive testing performed including: GET /api/aggregate (countries with visit counts), GET /api/countries (dropdown data), GET /api/country?code=XX (country details with restaurants), POST /api/visit (add visits with fusion support). All endpoints return correct data structures, handle validation properly, and integrate correctly with Supabase database. Visit counts and color intensity are automatically updated. Ready for frontend testing or deployment."
   - agent: "testing"
-    message: "🚨 CRITICAL ISSUE IDENTIFIED: Frontend UI components are beautifully implemented and working correctly, but there's a critical API routing infrastructure problem. External domain (https://julien-eats.preview.emergentagent.com/api/*) returns 502 errors while local APIs work perfectly. This breaks all data loading. IMMEDIATE ACTION REQUIRED: Fix Kubernetes ingress routing for /api/* paths. All frontend functionality depends on this fix."
+    message: "🚨 CRITICAL ISSUE IDENTIFIED: Frontend UI components are beautifully implemented and working correctly, but there's a critical API routing infrastructure problem. External domain (https://cuisine-tracker-2.preview.emergentagent.com/api/*) returns 502 errors while local APIs work perfectly. This breaks all data loading. IMMEDIATE ACTION REQUIRED: Fix Kubernetes ingress routing for /api/* paths. All frontend functionality depends on this fix."
