@@ -232,12 +232,20 @@ async function clearAndPopulateCountries() {
     console.log('🧹 Clearing existing countries and restaurants...')
     
     // Delete all existing restaurants first (foreign key constraint)
-    await supabase.from('restaurants').delete().gte('id', 0)
-    console.log('✅ Cleared restaurants')
+    const { error: restaurantsError } = await supabase.from('restaurants').delete().neq('id', '')
+    if (restaurantsError) {
+      console.error('Error clearing restaurants:', restaurantsError)
+    } else {
+      console.log('✅ Cleared restaurants')
+    }
     
     // Delete all existing countries
-    await supabase.from('countries').delete().gte('id', 0)
-    console.log('✅ Cleared countries')
+    const { error: countriesError } = await supabase.from('countries').delete().neq('id', '')
+    if (countriesError) {
+      console.error('Error clearing countries:', countriesError)
+    } else {
+      console.log('✅ Cleared countries')
+    }
 
     console.log('🌍 Adding 195 countries with 2-letter codes...')
     
