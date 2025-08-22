@@ -64,6 +64,36 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(data))
     }
 
+    // GET /api/restaurants?country_id=XX - Get restaurants for a specific country
+    if (route === '/restaurants' && method === 'GET') {
+      const url = new URL(request.url)
+      const countryId = url.searchParams.get('country_id')
+      
+      if (!countryId) {
+        return handleCORS(NextResponse.json(
+          { error: "Country ID is required" }, 
+          { status: 400 }
+        ))
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('restaurants')
+          .select('*')
+          .eq('country_id', countryId)
+          .order('visit_date', { ascending: false })
+        
+        if (error) throw error
+        
+        return handleCORS(NextResponse.json(data || []))
+      } catch (error) {
+        return handleCORS(NextResponse.json(
+          { error: error.message }, 
+          { status: 500 }
+        ))
+      }
+    }
+
     // POST /api/visit - Add a new restaurant visit
     if (route === '/visit' && method === 'POST') {
       const body = await request.json()
