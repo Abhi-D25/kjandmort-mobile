@@ -257,11 +257,7 @@ metadata:
   run_ui: false
 
 test_plan:
-  current_focus:
-    - "API Routes - Countries Aggregate"
-    - "API Routes - Country Details"
-    - "API Routes - Add Restaurant Visit"
-    - "API Routes - Countries List"
+  current_focus: []
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
