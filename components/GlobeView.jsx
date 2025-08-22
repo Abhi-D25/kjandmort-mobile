@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Map as MapIcon, Globe as GlobeIcon } from 'lucide-react'
 
 // Dynamically import Globe component to avoid SSR issues
-const Globe = dynamic(() => import('react-globe.gl'), { 
+const GlobeGL = dynamic(() => import('react-globe.gl'), { 
   ssr: false,
   loading: () => (
     <div className="flex items-center justify-center h-full">
