@@ -163,26 +163,32 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                   
                   return (
                     <Geography
-                      key={geo.rsmKey}
+                      key={`${geo.rsmKey}-${index}`}
                       geography={geo}
                       fill={fillColor}
                       stroke="#666"
                       strokeWidth={0.5}
                       onClick={() => handleGeographyClick(geo)}
+                      onMouseEnter={() => {
+                        // Optional: add hover effect
+                      }}
                       style={{
                         default: {
                           outline: "none",
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          pointerEvents: "all"
                         },
                         hover: {
                           fill: visitCount > 0 ? "#7C3AED" : "#E9D5FF",
                           outline: "none",
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          pointerEvents: "all"
                         },
                         pressed: {
                           fill: "#7C3AED",
                           outline: "none",
-                          cursor: "pointer"
+                          cursor: "pointer",
+                          pointerEvents: "all"
                         },
                       }}
                     />
