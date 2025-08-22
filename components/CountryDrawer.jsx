@@ -50,9 +50,9 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
             {countryData?.country?.name || 'Loading...'}
           </DialogTitle>
           <DialogDescription>
-            {countryData ? 
-              `${countryData.visits?.length || 0} restaurant visits` : 
-              'Loading country details...'
+            {visitCount > 0 ? 
+              `${countryData?.visits?.length || 0} restaurant visits` : 
+              'Discover this country\'s cuisine'
             }
           </DialogDescription>
         </DialogHeader>
@@ -64,46 +64,34 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
             </div>
           ) : countryData ? (
             <div className="space-y-4">
-              {/* For countries with no visits - show cuisine summary and add button */}
-              {(!countryData.visits || countryData.visits.length === 0) && (
-                <>
-                  <Card className="border-purple-200 bg-purple-50">
-                    <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2">
-                        <Utensils className="w-5 h-5" />
-                        {countryData.country.name} Cuisine
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-gray-700 mb-4">
-                        {countryData.cuisine_summary || 
-                         `Discover the amazing flavors of ${countryData.country.name}! This country awaits your first culinary exploration.`}
-                      </p>
-                      
-                      {showAddForm ? (
-                        <div className="mt-4">
-                          <h4 className="font-medium mb-3">Add Your First Visit</h4>
-                          <AddVisitForm 
-                            onSuccess={handleAddVisitSuccess}
-                            prefilledCountryId={countryData.country.id}
-                          />
-                        </div>
-                      ) : (
-                        <Button 
-                          onClick={() => setShowAddForm(true)}
-                          className="w-full bg-purple-600 hover:bg-purple-700"
-                        >
-                          <Plus className="w-4 h-4 mr-2" />
-                          Add First Visit
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                </>
+              {/* For countries with no visits - show cuisine summary */}
+              {visitCount === 0 && (
+                <Card className="border-purple-200 bg-purple-50">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Utensils className="w-5 h-5" />
+                      Discover {countryData.country.name} Cuisine
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-700 mb-4">
+                      {countryData.cuisine_summary || 
+                       `Experience the rich and diverse flavors of ${countryData.country.name}! This country offers a unique culinary tradition waiting to be explored. From traditional dishes passed down through generations to modern interpretations, ${countryData.country.name} has something special for every food lover.`}
+                    </p>
+                    
+                    <Button 
+                      onClick={() => setShowAddForm(true)}
+                      className="w-full bg-purple-600 hover:bg-purple-700"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add First Visit
+                    </Button>
+                  </CardContent>
+                </Card>
               )}
 
               {/* For countries with visits - show restaurant list */}
-              {countryData.visits && countryData.visits.length > 0 && (
+              {visitCount > 0 && countryData.visits && countryData.visits.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
                     <h3 className="font-semibold text-lg">Restaurant Visits</h3>
@@ -116,20 +104,6 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                       Add Visit
                     </Button>
                   </div>
-
-                  {showAddForm && (
-                    <Card className="border-green-200 bg-green-50">
-                      <CardHeader>
-                        <CardTitle className="text-base">Add New Visit</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <AddVisitForm 
-                          onSuccess={handleAddVisitSuccess}
-                          prefilledCountryId={countryData.country.id}
-                        />
-                      </CardContent>
-                    </Card>
-                  )}
 
                   {countryData.visits.map((visit, index) => (
                     <Card key={visit.id} className="border-l-4 border-l-purple-500">
@@ -207,6 +181,29 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                     </Card>
                   ))}
                 </div>
+              )}
+
+              {/* Add Visit Form */}
+              {showAddForm && (
+                <Card className="border-green-200 bg-green-50">
+                  <CardHeader>
+                    <CardTitle className="text-base">Add New Visit</CardTitle>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => setShowAddForm(false)}
+                      className="absolute right-2 top-2"
+                    >
+                      ✕
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <AddVisitForm 
+                      onSuccess={handleAddVisitSuccess}
+                      prefilledCountryId={countryData?.country?.id}
+                    />
+                  </CardContent>
+                </Card>
               )}
             </div>
           ) : (

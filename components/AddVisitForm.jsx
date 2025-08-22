@@ -10,12 +10,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Crown, Cat, ChefHat, MapPin } from 'lucide-react'
+import { Crown, Cat, ChefHat, MapPin, Plus } from 'lucide-react'
 
 export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isFusion, setIsFusion] = useState(false)
   const [selectedCuisine, setSelectedCuisine] = useState('')
+  const [selectedFusionCuisine, setSelectedFusionCuisine] = useState('')
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
 
@@ -38,13 +39,30 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
       if (!response.ok) throw new Error('Failed to fetch countries')
       return response.json()
     },
-    enabled: true // Always enabled, will filter by cuisine when selected
+    enabled: !!selectedCuisine
+  })
+
+  // Query for fusion countries list (filtered by fusion cuisine)
+  const { data: fusionCountries = [] } = useQuery({
+    queryKey: ['countries', selectedFusionCuisine],
+    queryFn: async () => {
+      const url = selectedFusionCuisine ? `/api/countries?cuisine=${selectedFusionCuisine}` : '/api/countries'
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Failed to fetch fusion countries')
+      return response.json()
+    },
+    enabled: !!selectedFusionCuisine && isFusion
   })
 
   // Handle cuisine change
   const handleCuisineChange = (cuisine) => {
     setSelectedCuisine(cuisine)
     setValue('country_id', '') // Reset country selection
+  }
+
+  // Handle fusion cuisine change
+  const handleFusionCuisineChange = (cuisine) => {
+    setSelectedFusionCuisine(cuisine)
     setValue('fusion_country_id', '') // Reset fusion country selection
   }
 
@@ -93,6 +111,7 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
       reset()
       setIsFusion(false)
       setSelectedCuisine('')
+      setSelectedFusionCuisine('')
       onSuccess?.(result)
     } catch (error) {
       console.error('Error adding visit:', error)
@@ -104,7 +123,7 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
 
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-      {/* Cuisine Selection - First Field */}
+      {/* Primary Cuisine Selection - First Field */}
       <div className="space-y-2">
         <Label htmlFor="cuisine" className="flex items-center gap-2">
           <ChefHat className="w-4 h-4" />
@@ -156,6 +175,68 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
         )}
       </div>
 
+      {/* Fusion Checkbox */}
+      <div className="flex items-center space-x-2">
+        <Checkbox 
+          id="fusion" 
+          checked={isFusion}
+          onCheckedChange={setIsFusion}
+        />
+        <Label htmlFor="fusion" className="text-sm font-medium">
+          Fusion cuisine? (Add to second cuisine/country too)
+        </Label>
+      </div>
+
+      {/* Fusion Cuisine and Country Selection */}
+      {isFusion && (
+        <Card className="border-orange-200 bg-orange-50 p-4">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              Fusion Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Fusion Cuisine Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="fusion_cuisine">Fusion Cuisine Type *</Label>
+              <Select value={selectedFusionCuisine} onValueChange={handleFusionCuisineChange}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select fusion cuisine type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {cuisines.map((cuisine) => (
+                    <SelectItem key={cuisine.value} value={cuisine.value}>
+                      {cuisine.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Fusion Country Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="fusion_country_id">Fusion Country *</Label>
+              <Select 
+                onValueChange={(value) => setValue('fusion_country_id', value)}
+                disabled={!selectedFusionCuisine}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={selectedFusionCuisine ? "Select fusion country" : "Select fusion cuisine first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {fusionCountries.map((country) => (
+                    <SelectItem key={country.id} value={country.id}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Restaurant Name */}
       <div className="space-y-2">
         <Label htmlFor="restaurant_name">Restaurant Name *</Label>
@@ -182,7 +263,7 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
         )}
       </div>
 
-      {/* Items Devoured - Now Optional */}
+      {/* Items Devoured - Optional */}
       <div className="space-y-2">
         <Label htmlFor="items_devoured">Items Devoured</Label>
         <Textarea
@@ -232,42 +313,11 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
         </CardContent>
       </Card>
 
-      {/* Fusion Checkbox */}
-      <div className="flex items-center space-x-2">
-        <Checkbox 
-          id="fusion" 
-          checked={isFusion}
-          onCheckedChange={setIsFusion}
-        />
-        <Label htmlFor="fusion" className="text-sm font-medium">
-          Fusion cuisine? (Add to second country too)
-        </Label>
-      </div>
-
-      {/* Fusion Country Selection */}
-      {isFusion && (
-        <div className="space-y-2">
-          <Label htmlFor="fusion_country_id">Fusion Country</Label>
-          <Select onValueChange={(value) => setValue('fusion_country_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select fusion country" />
-            </SelectTrigger>
-            <SelectContent>
-              {countries.map((country) => (
-                <SelectItem key={country.id} value={country.id}>
-                  {country.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
-
       {/* Submit Button */}
       <Button 
         type="submit" 
         className="w-full bg-purple-600 hover:bg-purple-700"
-        disabled={isSubmitting || !selectedCuisine}
+        disabled={isSubmitting || !selectedCuisine || (isFusion && !selectedFusionCuisine)}
       >
         {isSubmitting ? 'Adding Visit...' : 'Add Visit'}
       </Button>
