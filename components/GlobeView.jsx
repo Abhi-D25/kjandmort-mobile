@@ -101,7 +101,7 @@ export default function GlobeView({ countriesData = [], maxVisitCount, onCountry
               onClick={onSwitchToMap}
               className="w-full bg-purple-600 hover:bg-purple-700"
             >
-              <Map className="w-4 h-4 mr-2" />
+              <MapIcon className="w-4 h-4 mr-2" />
               Tap to Explore Map
             </Button>
           </CardContent>
