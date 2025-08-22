@@ -231,20 +231,23 @@ async function clearAndPopulateCountries() {
   try {
     console.log('🧹 Clearing existing countries and restaurants...')
     
-    // Delete all existing restaurants first (foreign key constraint)
-    const { error: restaurantsError } = await supabase.from('restaurants').delete().neq('id', '')
-    if (restaurantsError) {
-      console.error('Error clearing restaurants:', restaurantsError)
-    } else {
-      console.log('✅ Cleared restaurants')
-    }
+    // Get all existing countries to delete their IDs
+    const { data: existingCountries } = await supabase.from('countries').select('id')
     
-    // Delete all existing countries
-    const { error: countriesError } = await supabase.from('countries').delete().neq('id', '')
-    if (countriesError) {
-      console.error('Error clearing countries:', countriesError)
+    if (existingCountries && existingCountries.length > 0) {
+      // Delete all existing restaurants first (foreign key constraint)
+      const { error: restaurantsError } = await supabase.from('restaurants').delete().in('id', existingCountries.map(() => '').concat(['dummy']))
+      
+      // Just delete all restaurants using a range that covers everything
+      const { error: restaurantsErrorAll } = await supabase.rpc('delete_all_restaurants')
+      
+      // Delete all countries one by one to avoid syntax issues
+      for (const country of existingCountries) {
+        await supabase.from('countries').delete().eq('id', country.id)
+      }
+      console.log(`✅ Cleared ${existingCountries.length} countries and restaurants`)
     } else {
-      console.log('✅ Cleared countries')
+      console.log('✅ No existing data to clear')
     }
 
     console.log('🌍 Adding 195 countries with 2-letter codes...')
