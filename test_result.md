@@ -134,15 +134,18 @@ backend:
 
   - task: "API Routes - Country Details"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/country?code=XX implemented but not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TEST PASSED: GET /api/country?code=FRA successfully returns country details with visits array. Correctly handles valid country codes and returns proper error for invalid codes. Fusion visits working correctly with both countries referenced."
 
   - task: "API Routes - Countries List"
     implemented: true
