@@ -79,20 +79,22 @@ export default function CountryPopup({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] md:max-h-[80vh] overflow-y-auto w-[95vw] md:w-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-2xl">
-              <MapPin className="h-6 w-6 text-purple-600" />
-              {countryName}
+            <DialogTitle className="flex flex-col sm:flex-row sm:items-center gap-2 text-xl md:text-2xl">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+                <span className="break-words">{countryName}</span>
+              </div>
               {hasVisits && (
-                <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+                <Badge variant="secondary" className="bg-purple-100 text-purple-800 w-fit">
                   {countryData.visit_count} visit{countryData.visit_count !== 1 ? 's' : ''}
                 </Badge>
               )}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-4 md:space-y-6">
             {/* Cuisine Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
@@ -102,8 +104,8 @@ export default function CountryPopup({
                 </h3>
               </div>
               
-              <div className="bg-orange-50 p-4 rounded-lg border-l-4 border-orange-400">
-                <p className="text-gray-700 leading-relaxed">
+              <div className="bg-orange-50 p-3 md:p-4 rounded-lg border-l-4 border-orange-400">
+                <p className="text-gray-700 leading-relaxed text-sm md:text-base">
                   {cuisineDescription}
                 </p>
               </div>
@@ -121,25 +123,25 @@ export default function CountryPopup({
                   {restaurants.map((restaurant, index) => (
                     <div 
                       key={restaurant.id || index} 
-                      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                      className="bg-white border border-gray-200 rounded-lg p-3 md:p-4 shadow-sm hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-lg text-gray-900">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
+                        <h4 className="font-semibold text-base md:text-lg text-gray-900 break-words">
                           {restaurant.restaurant_name}
                         </h4>
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <Calendar className="h-4 w-4" />
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                          <div className="flex items-center gap-1 text-xs md:text-sm text-gray-500">
+                            <Calendar className="h-3 w-3 md:h-4 md:w-4" />
                             {restaurant.visit_date ? new Date(restaurant.visit_date).toLocaleDateString() : 'Date unknown'}
                           </div>
                           
                           {/* Edit/Delete Buttons */}
-                          <div className="flex gap-1 ml-2">
+                          <div className="flex gap-1">
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleEdit(restaurant)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 touch-manipulation"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -147,7 +149,7 @@ export default function CountryPopup({
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDelete(restaurant)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 touch-manipulation"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -156,34 +158,34 @@ export default function CountryPopup({
                       </div>
                       
                       <div className="space-y-2">
-                        <p className="text-gray-600">
+                        <p className="text-gray-600 text-sm md:text-base">
                           <span className="font-medium">Location:</span> {restaurant.location || 'Not specified'}
                         </p>
                         
                         {restaurant.items_devoured && (
-                          <p className="text-gray-600">
+                          <p className="text-gray-600 text-sm md:text-base">
                             <span className="font-medium">Items Devoured:</span> {restaurant.items_devoured}
                           </p>
                         )}
                         
-                        <div className="flex gap-4">
+                        <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
                           {restaurant.king_julien_favorite && (
                             <div className="flex items-center gap-1">
-                              <span className="text-yellow-600 font-medium">👑 King Julien:</span>
-                              <span className="text-sm">{restaurant.king_julien_favorite}</span>
+                              <span className="text-yellow-600 font-medium text-sm">👑 King Julien:</span>
+                              <span className="text-xs md:text-sm">{restaurant.king_julien_favorite}</span>
                             </div>
                           )}
                           
                           {restaurant.mort_favorite && (
                             <div className="flex items-center gap-1">
-                              <span className="text-gray-600 font-medium">🐭 Mort:</span>
-                              <span className="text-sm">{restaurant.mort_favorite}</span>
+                              <span className="text-gray-600 font-medium text-sm">🐭 Mort:</span>
+                              <span className="text-xs md:text-sm">{restaurant.mort_favorite}</span>
                             </div>
                           )}
                         </div>
                         
                         {restaurant.is_fusion && (
-                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                          <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200 w-fit text-xs">
                             Fusion Cuisine
                           </Badge>
                         )}
@@ -197,17 +199,17 @@ export default function CountryPopup({
             {/* No visits message */}
             {!hasVisits && (
               <div className="bg-gray-50 p-4 rounded-lg text-center">
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-sm md:text-base">
                   No restaurants visited yet in {countryName}. 
                   <br />
-                  <span className="text-sm">Click "Add New Visit" to start your culinary journey!</span>
+                  <span className="text-xs md:text-sm">Click "Add New Visit" to start your culinary journey!</span>
                 </p>
               </div>
             )}
           </div>
 
           <div className="flex justify-end pt-4 border-t">
-            <Button onClick={onClose} variant="outline">
+            <Button onClick={onClose} variant="outline" className="w-full sm:w-auto">
               Close
             </Button>
           </div>

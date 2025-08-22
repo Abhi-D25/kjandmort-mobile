@@ -106,10 +106,10 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading map...</p>
+          <div className="animate-spin rounded-full h-16 w-16 md:h-32 md:w-32 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm md:text-base">Loading map...</p>
         </div>
       </div>
     )
@@ -117,7 +117,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
 
   return (
     <>
-      <div className="w-full h-full bg-blue-50">
+      <div className="w-full h-full bg-blue-50 relative">
         <ComposableMap
           projection="geoMercator"
           projectionConfig={{
@@ -126,9 +126,19 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
           }}
           width={800}
           height={600}
-          style={{ width: "100%", height: "100%", cursor: "pointer" }}
+          style={{ 
+            width: "100%", 
+            height: "100%", 
+            cursor: "pointer",
+            minHeight: "400px"
+          }}
         >
-          <ZoomableGroup>
+          <ZoomableGroup
+            maxZoom={4}
+            minZoom={1}
+            center={[0, 0]}
+            zoom={1}
+          >
             <Geographies geography={geoUrl}>
               {({ geographies }) =>
                 geographies.map((geo, index) => {

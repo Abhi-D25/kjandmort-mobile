@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MapPin, Calendar, Crown, Cat, Utensils, Plus } from 'lucide-react'
+import { MapPin, Calendar, Crown, Cat, Utensils, Plus, X } from 'lucide-react'
 import AddVisitForm from './AddVisitForm'
 
 export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose, onAddVisit }) {
@@ -43,13 +43,13 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh]">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] md:max-h-[80vh] w-[95vw] md:w-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <MapPin className="w-5 h-5" />
-            {countryData?.country?.name || 'Loading...'}
+          <DialogTitle className="flex items-center gap-2 text-lg md:text-xl">
+            <MapPin className="w-4 h-4 md:w-5 md:h-5" />
+            <span className="break-words">{countryData?.country?.name || 'Loading...'}</span>
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {visitCount > 0 ? 
               `${countryData?.visits?.length || 0} restaurant visits` : 
               'Discover this country\'s cuisine'
@@ -57,7 +57,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[60vh]">
+        <ScrollArea className="max-h-[70vh] md:max-h-[60vh]">
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
@@ -67,14 +67,14 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
               {/* For countries with no visits - show cuisine summary */}
               {visitCount === 0 && (
                 <Card className="border-purple-200 bg-purple-50">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Utensils className="w-5 h-5" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-base md:text-lg flex items-center gap-2">
+                      <Utensils className="w-4 h-4 md:w-5 md:h-5" />
                       Discover {countryData.country.name} Cuisine
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-gray-700 mb-4">
+                    <p className="text-gray-700 mb-4 text-sm md:text-base">
                       {countryData.cuisine_summary || 
                        `Experience the rich and diverse flavors of ${countryData.country.name}! This country offers a unique culinary tradition waiting to be explored. From traditional dishes passed down through generations to modern interpretations, ${countryData.country.name} has something special for every food lover.`}
                     </p>
@@ -93,12 +93,13 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
               {/* For countries with visits - show restaurant list */}
               {visitCount > 0 && countryData.visits && countryData.visits.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-lg">Restaurant Visits</h3>
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                    <h3 className="font-semibold text-base md:text-lg">Restaurant Visits</h3>
                     <Button 
                       variant="outline" 
                       size="sm"
                       onClick={() => setShowAddForm(true)}
+                      className="w-full sm:w-auto"
                     >
                       <Plus className="w-4 h-4 mr-1" />
                       Add Visit
@@ -108,15 +109,15 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                   {countryData.visits.map((visit, index) => (
                     <Card key={visit.id} className="border-l-4 border-l-purple-500">
                       <CardHeader className="pb-3">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <CardTitle className="text-base">{visit.restaurant_name}</CardTitle>
-                            <CardDescription className="flex items-center gap-1 mt-1">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                          <div className="flex-1">
+                            <CardTitle className="text-sm md:text-base break-words">{visit.restaurant_name}</CardTitle>
+                            <CardDescription className="flex items-center gap-1 mt-1 text-xs md:text-sm">
                               <MapPin className="w-3 h-3" />
-                              {visit.location}
+                              <span className="break-words">{visit.location}</span>
                             </CardDescription>
                           </div>
-                          <div className="flex flex-col items-end gap-1">
+                          <div className="flex flex-col items-start sm:items-end gap-1">
                             <Badge variant="outline" className="text-xs">
                               <Calendar className="w-3 h-3 mr-1" />
                               {formatDate(visit.visit_date)}
@@ -135,7 +136,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                         {visit.items_devoured && (
                           <div>
                             <h4 className="font-medium text-sm mb-1">Items Devoured</h4>
-                            <p className="text-sm text-gray-600">{visit.items_devoured}</p>
+                            <p className="text-sm text-gray-600 break-words">{visit.items_devoured}</p>
                           </div>
                         )}
 
@@ -143,23 +144,23 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                         {(visit.king_julien_favorite || visit.mort_favorite) && (
                           <>
                             <Separator />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div className="grid grid-cols-1 gap-3">
                               {visit.king_julien_favorite && (
                                 <div className="flex items-start gap-2">
-                                  <Crown className="w-4 h-4 text-yellow-600 mt-0.5" />
-                                  <div>
+                                  <Crown className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
                                     <p className="text-xs font-medium text-yellow-700">King Julien's Pick</p>
-                                    <p className="text-sm">{visit.king_julien_favorite}</p>
+                                    <p className="text-sm break-words">{visit.king_julien_favorite}</p>
                                   </div>
                                 </div>
                               )}
                               
                               {visit.mort_favorite && (
                                 <div className="flex items-start gap-2">
-                                  <Cat className="w-4 h-4 text-gray-600 mt-0.5" />
-                                  <div>
+                                  <Cat className="w-4 h-4 text-gray-600 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1">
                                     <p className="text-xs font-medium text-gray-700">Mort's Pick</p>
-                                    <p className="text-sm">{visit.mort_favorite}</p>
+                                    <p className="text-sm break-words">{visit.mort_favorite}</p>
                                   </div>
                                 </div>
                               )}
@@ -173,7 +174,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                             <Separator />
                             <div className="text-sm">
                               <span className="font-medium">Also counted for: </span>
-                              <span>{visit.fusion_countries.name}</span>
+                              <span className="break-words">{visit.fusion_countries.name}</span>
                             </div>
                           </>
                         )}
@@ -186,20 +187,23 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
               {/* Add Visit Form */}
               {showAddForm && (
                 <Card className="border-green-200 bg-green-50">
-                  <CardHeader>
-                    <CardTitle className="text-base">Add New Visit</CardTitle>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setShowAddForm(false)}
-                      className="absolute right-2 top-2"
-                    >
-                      ✕
-                    </Button>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-base">Add New Visit</CardTitle>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => setShowAddForm(false)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <AddVisitForm 
                       onSuccess={handleAddVisitSuccess}
+                      onCancel={() => setShowAddForm(false)}
                       prefilledCountryId={countryData?.country?.id}
                     />
                   </CardContent>
@@ -208,7 +212,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
             </div>
           ) : (
             <div className="text-center py-8">
-              <p className="text-gray-500">No data available for this country.</p>
+              <p className="text-gray-500 text-sm md:text-base">No data available for this country.</p>
             </div>
           )}
         </ScrollArea>

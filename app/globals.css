@@ -9,6 +9,23 @@ body {
         "Helvetica Neue", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Mobile-friendly improvements */
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Allow text selection for specific elements */
+input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -khtml-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
 }
 
 code {
@@ -55,7 +72,49 @@ code {
     }
 }
 
+/* Mobile-friendly improvements */
+@media (max-width: 768px) {
+    /* Improve touch targets */
+    button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+    
+    /* Improve form elements */
+    input, select, textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+    
+    /* Better spacing for mobile */
+    .space-y-4 > * + * {
+        margin-top: 1rem;
+    }
+    
+    .space-y-6 > * + * {
+        margin-top: 1.5rem;
+    }
+}
 
+/* Touch-friendly interactions */
+.touch-manipulation {
+    touch-action: manipulation;
+}
+
+/* Prevent horizontal scroll on mobile */
+html, body {
+    overflow-x: hidden;
+    width: 100%;
+}
+
+/* Improve map interactions on mobile */
+.react-simple-maps__geography {
+    touch-action: manipulation;
+}
+
+/* Better mobile scrolling */
+.scroll-area {
+    -webkit-overflow-scrolling: touch;
+}
 
 @layer base {
   :root {
@@ -128,8 +187,6 @@ code {
         --sidebar-ring: 217.2 91.2% 59.8%;
     }
 }
-
-
 
 @layer base {
   * {

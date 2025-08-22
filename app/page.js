@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Globe, Map, List, Plus, MapPin, Crown, Cat } from 'lucide-react'
+import { Globe, Map, List, Plus, MapPin, Crown, Cat, Menu, X } from 'lucide-react'
 import LandingPage from '@/components/LandingPage'
 import MapView from '@/components/MapView'
 import AddVisitForm from '@/components/AddVisitForm'
 import CountryDrawer from '@/components/CountryDrawer'
 import Legend from '@/components/Legend'
+import { useIsMobile } from '@/hooks/use-mobile'
 
 const queryClient = new QueryClient()
 
@@ -21,6 +22,8 @@ function CuisineApp() {
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedCountryVisitCount, setSelectedCountryVisitCount] = useState(0)
   const [showAddForm, setShowAddForm] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const isMobile = useIsMobile()
 
   // Query for countries data
   const { 
@@ -84,111 +87,316 @@ function CuisineApp() {
         <>
           {/* Header */}
           <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-40">
-            <div className="container mx-auto px-4 py-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 text-2xl font-bold text-purple-700">
-                    <Crown className="w-8 h-8 text-yellow-500" />
-                    <span>King Julien & Mort's</span>
-                    <Cat className="w-6 h-6 text-gray-600" />
+            <div className="container mx-auto px-4 py-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <div className="flex items-center gap-1 md:gap-2 text-lg md:text-2xl font-bold text-purple-700">
+                    <Crown className="w-6 h-6 md:w-8 md:h-8 text-yellow-500" />
+                    <span className="hidden sm:inline">King Julien & Mort's</span>
+                    <span className="sm:hidden">KJ & Mort</span>
+                    <Cat className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
                   </div>
-                  <div className="text-sm text-gray-600 md:text-base">
-                    World Cuisine Tour
+                  <div className="text-xs md:text-sm text-gray-600">
+                    <span className="hidden md:inline">World Cuisine Tour</span>
+                    <span className="md:hidden">Tour</span>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="px-3 py-1">
-                    <MapPin className="w-4 h-4 mr-1" />
-                    {visitedCountries} countries
+                  <Badge variant="secondary" className="px-2 py-1 text-xs">
+                    <MapPin className="w-3 h-3 mr-1" />
+                    <span className="hidden sm:inline">{visitedCountries} countries</span>
+                    <span className="sm:hidden">{visitedCountries}</span>
                   </Badge>
-                  <Badge variant="secondary" className="px-3 py-1">
+                  <Badge variant="secondary" className="px-2 py-1 text-xs">
                     {totalVisits} visits
                   </Badge>
+                  {isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowMobileMenu(!showMobileMenu)}
+                      className="ml-2"
+                    >
+                      {showMobileMenu ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
           </header>
 
-          {/* Main Content */}
-          <main className="container mx-auto px-4 py-6">
-            {/* Map and List Views */}
-            <div className="flex flex-col lg:flex-row gap-6">
-            {/* Left Panel - Controls */}
-            <div className="lg:w-80 space-y-6">
-              {/* View Toggle */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">View Mode</CardTitle>
-                  <CardDescription>Choose how to explore the world</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
+          {/* Mobile Menu Overlay */}
+          {isMobile && showMobileMenu && (
+            <div className="fixed inset-0 bg-black/50 z-50 lg:hidden">
+              <div className="absolute right-0 top-0 h-full w-80 bg-white shadow-xl p-6 overflow-y-auto">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-semibold">Menu</h2>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+                
+                {/* View Toggle */}
+                <div className="space-y-4 mb-6">
+                  <h3 className="font-medium">View Mode</h3>
+                  <Tabs value={currentView} onValueChange={(value) => {
+                    setCurrentView(value)
+                    setShowMobileMenu(false)
+                  }} className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="landing" className="flex items-center gap-1">
-                        <Globe className="w-4 h-4" />
+                      <TabsTrigger value="landing" className="flex items-center gap-1 text-xs">
+                        <Globe className="w-3 h-3" />
                         Home
                       </TabsTrigger>
-                      <TabsTrigger value="map" className="flex items-center gap-1">
-                        <Map className="w-4 h-4" />
+                      <TabsTrigger value="map" className="flex items-center gap-1 text-xs">
+                        <Map className="w-3 h-3" />
                         Map
                       </TabsTrigger>
-                      <TabsTrigger value="list" className="flex items-center gap-1">
-                        <List className="w-4 h-4" />
+                      <TabsTrigger value="list" className="flex items-center gap-1 text-xs">
+                        <List className="w-3 h-3" />
                         List
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
-                </CardContent>
-              </Card>
+                </div>
 
-              {/* Add Visit Button */}
-              <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
-                <DialogTrigger asChild>
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add New Visit
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>Add Restaurant Visit</DialogTitle>
-                    <DialogDescription>
-                      Record your latest culinary adventure!
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AddVisitForm onSuccess={handleAddVisitSuccess} />
-                </DialogContent>
-              </Dialog>
+                {/* Add Visit Button */}
+                <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700 mb-6">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Visit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader className="relative">
+                      <DialogTitle>Add Restaurant Visit</DialogTitle>
+                      <DialogDescription>
+                        Record your latest culinary adventure!
+                      </DialogDescription>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAddForm(false)}
+                        className="absolute right-0 top-0 h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </DialogHeader>
+                    <AddVisitForm onSuccess={handleAddVisitSuccess} onCancel={() => setShowAddForm(false)} />
+                  </DialogContent>
+                </Dialog>
 
-              {/* Legend */}
-              <Legend maxCount={maxVisitCount} />
+                {/* Legend */}
+                <div className="mb-6">
+                  <h3 className="font-medium mb-3">Legend</h3>
+                  <Legend maxCount={maxVisitCount} />
+                </div>
 
-              {/* Stats */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Tour Statistics</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Countries Visited:</span>
-                    <span className="font-semibold">{visitedCountries}</span>
+                {/* Stats */}
+                <div className="space-y-2">
+                  <h3 className="font-medium">Tour Statistics</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Countries Visited:</span>
+                      <span className="font-semibold">{visitedCountries}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Total Restaurant Visits:</span>
+                      <span className="font-semibold">{totalVisits}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Countries Remaining:</span>
+                      <span className="font-semibold">{countriesData.length - visitedCountries}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Total Restaurant Visits:</span>
-                    <span className="font-semibold">{totalVisits}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Countries Remaining:</span>
-                    <span className="font-semibold">{countriesData.length - visitedCountries}</span>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Main Content */}
+          <main className="container mx-auto px-4 py-4 md:py-6">
+            {/* Desktop Layout */}
+            <div className="hidden lg:flex gap-6">
+              {/* Left Panel - Controls */}
+              <div className="w-80 space-y-6">
+                {/* View Toggle */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">View Mode</CardTitle>
+                    <CardDescription>Choose how to explore the world</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
+                      <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="landing" className="flex items-center gap-1">
+                          <Globe className="w-4 h-4" />
+                          Home
+                        </TabsTrigger>
+                        <TabsTrigger value="map" className="flex items-center gap-1">
+                          <Map className="w-4 h-4" />
+                          Map
+                        </TabsTrigger>
+                        <TabsTrigger value="list" className="flex items-center gap-1">
+                          <List className="w-4 h-4" />
+                          List
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+
+                {/* Add Visit Button */}
+                <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Visit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader className="relative">
+                      <DialogTitle>Add Restaurant Visit</DialogTitle>
+                      <DialogDescription>
+                        Record your latest culinary adventure!
+                      </DialogDescription>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAddForm(false)}
+                        className="absolute right-0 top-0 h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </DialogHeader>
+                    <AddVisitForm onSuccess={handleAddVisitSuccess} onCancel={() => setShowAddForm(false)} />
+                  </DialogContent>
+                </Dialog>
+
+                {/* Legend */}
+                <Legend maxCount={maxVisitCount} />
+
+                {/* Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Tour Statistics</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Countries Visited:</span>
+                      <span className="font-semibold">{visitedCountries}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Total Restaurant Visits:</span>
+                      <span className="font-semibold">{totalVisits}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Countries Remaining:</span>
+                      <span className="font-semibold">{countriesData.length - visitedCountries}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Panel - Main View */}
+              <div className="flex-1">
+                <Card className="h-[600px] overflow-hidden">
+                  <CardContent className="p-0 h-full">
+                    {currentView === 'map' && (
+                      <MapView 
+                        countriesData={countriesData}
+                        maxVisitCount={maxVisitCount}
+                        onCountryClick={handleCountryClick}
+                        isLoading={countriesLoading}
+                      />
+                    )}
+                    {currentView === 'list' && (
+                      <div className="p-6 h-full overflow-y-auto">
+                        <h3 className="text-lg font-semibold mb-4">All Countries</h3>
+                        <div className="grid gap-2">
+                          {countriesData
+                            .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
+                            .map((country) => (
+                              <Card 
+                                key={country.country_code} 
+                                className="p-3 cursor-pointer hover:bg-purple-50 transition-colors"
+                                onClick={() => handleCountryItemClick(country.country_code, country.visit_count || 0)}
+                              >
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium">{country.name}</span>
+                                  <Badge variant={country.visit_count > 0 ? "default" : "secondary"}>
+                                    {country.visit_count || 0} visits
+                                  </Badge>
+                                </div>
+                              </Card>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
             </div>
 
-            {/* Right Panel - Main View */}
-            <div className="flex-1">
-              <Card className="h-[600px] overflow-hidden">
+            {/* Mobile Layout */}
+            <div className="lg:hidden">
+              {/* Mobile View Toggle */}
+              <div className="mb-4">
+                <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="landing" className="flex items-center gap-1 text-xs">
+                      <Globe className="w-3 h-3" />
+                      Home
+                    </TabsTrigger>
+                    <TabsTrigger value="map" className="flex items-center gap-1 text-xs">
+                      <Map className="w-3 h-3" />
+                      Map
+                    </TabsTrigger>
+                    <TabsTrigger value="list" className="flex items-center gap-1 text-xs">
+                      <List className="w-3 h-3" />
+                      List
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+
+              {/* Mobile Add Visit Button */}
+              <div className="mb-4">
+                <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
+                  <DialogTrigger asChild>
+                    <Button className="w-full bg-purple-600 hover:bg-purple-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Visit
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader className="relative">
+                      <DialogTitle>Add Restaurant Visit</DialogTitle>
+                      <DialogDescription>
+                        Record your latest culinary adventure!
+                      </DialogDescription>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowAddForm(false)}
+                        className="absolute right-0 top-0 h-8 w-8 p-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </DialogHeader>
+                    <AddVisitForm onSuccess={handleAddVisitSuccess} onCancel={() => setShowAddForm(false)} />
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {/* Mobile Main View */}
+              <Card className="h-[70vh] overflow-hidden">
                 <CardContent className="p-0 h-full">
                   {currentView === 'map' && (
                     <MapView 
@@ -199,7 +407,7 @@ function CuisineApp() {
                     />
                   )}
                   {currentView === 'list' && (
-                    <div className="p-6 h-full overflow-y-auto">
+                    <div className="p-4 h-full overflow-y-auto">
                       <h3 className="text-lg font-semibold mb-4">All Countries</h3>
                       <div className="grid gap-2">
                         {countriesData
@@ -211,8 +419,8 @@ function CuisineApp() {
                               onClick={() => handleCountryItemClick(country.country_code, country.visit_count || 0)}
                             >
                               <div className="flex justify-between items-center">
-                                <span className="font-medium">{country.name}</span>
-                                <Badge variant={country.visit_count > 0 ? "default" : "secondary"}>
+                                <span className="font-medium text-sm">{country.name}</span>
+                                <Badge variant={country.visit_count > 0 ? "default" : "secondary"} className="text-xs">
                                   {country.visit_count || 0} visits
                                 </Badge>
                               </div>
@@ -224,19 +432,18 @@ function CuisineApp() {
                 </CardContent>
               </Card>
             </div>
-          </div>
-            </main>
-          </>
-        )}
+          </main>
+        </>
+      )}
 
-        {/* Country Details Drawer */}
-        <CountryDrawer 
-          countryCode={selectedCountry}
-          visitCount={selectedCountryVisitCount}
-          isOpen={!!selectedCountry}
-          onClose={() => setSelectedCountry(null)}
-          onAddVisit={handleCountryDrawerAddVisit}
-        />
+      {/* Country Details Drawer */}
+      <CountryDrawer 
+        countryCode={selectedCountry}
+        visitCount={selectedCountryVisitCount}
+        isOpen={!!selectedCountry}
+        onClose={() => setSelectedCountry(null)}
+        onAddVisit={handleCountryDrawerAddVisit}
+      />
     </div>
   )
 }

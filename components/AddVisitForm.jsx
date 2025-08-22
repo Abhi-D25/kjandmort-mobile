@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Crown, Cat, ChefHat, MapPin, Plus } from 'lucide-react'
 
-export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
+export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isFusion, setIsFusion] = useState(false)
   const [selectedCuisine, setSelectedCuisine] = useState('')
@@ -121,16 +121,25 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
     }
   }
 
+  const handleCancel = () => {
+    // Reset form state
+    reset()
+    setIsFusion(false)
+    setSelectedCuisine('')
+    setSelectedFusionCuisine('')
+    onCancel?.()
+  }
+
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
       {/* Primary Cuisine Selection - First Field */}
       <div className="space-y-2">
-        <Label htmlFor="cuisine" className="flex items-center gap-2">
+        <Label htmlFor="cuisine" className="flex items-center gap-2 text-sm md:text-base">
           <ChefHat className="w-4 h-4" />
           Cuisine Type *
         </Label>
         <Select value={selectedCuisine} onValueChange={handleCuisineChange}>
-          <SelectTrigger>
+          <SelectTrigger className="h-10 md:h-9">
             <SelectValue placeholder="Select cuisine type" />
           </SelectTrigger>
           <SelectContent>
@@ -142,13 +151,13 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
           </SelectContent>
         </Select>
         {!selectedCuisine && (
-          <p className="text-sm text-red-600">Please select a cuisine type</p>
+          <p className="text-xs md:text-sm text-red-600">Please select a cuisine type</p>
         )}
       </div>
 
       {/* Country Selection - Filtered by Cuisine */}
       <div className="space-y-2">
-        <Label htmlFor="country_id" className="flex items-center gap-2">
+        <Label htmlFor="country_id" className="flex items-center gap-2 text-sm md:text-base">
           <MapPin className="w-4 h-4" />
           Country *
         </Label>
@@ -156,7 +165,7 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
           onValueChange={(value) => setValue('country_id', value)}
           disabled={!selectedCuisine}
         >
-          <SelectTrigger>
+          <SelectTrigger className="h-10 md:h-9">
             <SelectValue placeholder={selectedCuisine ? "Select country" : "Select cuisine first"} />
           </SelectTrigger>
           <SelectContent>
@@ -168,10 +177,10 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
           </SelectContent>
         </Select>
         {countries.length === 0 && selectedCuisine && (
-          <p className="text-sm text-yellow-600">No countries found for {selectedCuisine} cuisine</p>
+          <p className="text-xs md:text-sm text-yellow-600">No countries found for {selectedCuisine} cuisine</p>
         )}
         {errors.country_id && (
-          <p className="text-sm text-red-600">Country is required</p>
+          <p className="text-xs md:text-sm text-red-600">Country is required</p>
         )}
       </div>
 
@@ -182,26 +191,26 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
           checked={isFusion}
           onCheckedChange={setIsFusion}
         />
-        <Label htmlFor="fusion" className="text-sm font-medium">
+        <Label htmlFor="fusion" className="text-xs md:text-sm font-medium">
           Fusion cuisine? (Add to second cuisine/country too)
         </Label>
       </div>
 
       {/* Fusion Cuisine and Country Selection */}
       {isFusion && (
-        <Card className="border-orange-200 bg-orange-50 p-4">
+        <Card className="border-orange-200 bg-orange-50 p-3 md:p-4">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Fusion Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-0">
             {/* Fusion Cuisine Selection */}
             <div className="space-y-2">
-              <Label htmlFor="fusion_cuisine">Fusion Cuisine Type *</Label>
+              <Label htmlFor="fusion_cuisine" className="text-sm">Fusion Cuisine Type *</Label>
               <Select value={selectedFusionCuisine} onValueChange={handleFusionCuisineChange}>
-                <SelectTrigger>
+                <SelectTrigger className="h-10 md:h-9">
                   <SelectValue placeholder="Select fusion cuisine type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,12 +225,12 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
 
             {/* Fusion Country Selection */}
             <div className="space-y-2">
-              <Label htmlFor="fusion_country_id">Fusion Country *</Label>
+              <Label htmlFor="fusion_country_id" className="text-sm">Fusion Country *</Label>
               <Select 
                 onValueChange={(value) => setValue('fusion_country_id', value)}
                 disabled={!selectedFusionCuisine}
               >
-                <SelectTrigger>
+                <SelectTrigger className="h-10 md:h-9">
                   <SelectValue placeholder={selectedFusionCuisine ? "Select fusion country" : "Select fusion cuisine first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -239,38 +248,41 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
 
       {/* Restaurant Name */}
       <div className="space-y-2">
-        <Label htmlFor="restaurant_name">Restaurant Name *</Label>
+        <Label htmlFor="restaurant_name" className="text-sm md:text-base">Restaurant Name *</Label>
         <Input
           id="restaurant_name"
           {...register('restaurant_name', { required: 'Restaurant name is required' })}
           placeholder="Enter restaurant name"
+          className="h-10 md:h-9"
         />
         {errors.restaurant_name && (
-          <p className="text-sm text-red-600">{errors.restaurant_name.message}</p>
+          <p className="text-xs md:text-sm text-red-600">{errors.restaurant_name.message}</p>
         )}
       </div>
 
       {/* Location */}
       <div className="space-y-2">
-        <Label htmlFor="location">Location *</Label>
+        <Label htmlFor="location" className="text-sm md:text-base">Location *</Label>
         <Input
           id="location"
           {...register('location', { required: 'Location is required' })}
           placeholder="City, Address, etc."
+          className="h-10 md:h-9"
         />
         {errors.location && (
-          <p className="text-sm text-red-600">{errors.location.message}</p>
+          <p className="text-xs md:text-sm text-red-600">{errors.location.message}</p>
         )}
       </div>
 
       {/* Items Devoured - Optional */}
       <div className="space-y-2">
-        <Label htmlFor="items_devoured">Items Devoured</Label>
+        <Label htmlFor="items_devoured" className="text-sm md:text-base">Items Devoured</Label>
         <Textarea
           id="items_devoured"
           {...register('items_devoured')}
           placeholder="Describe the delicious dishes you tried..."
           rows={3}
+          className="min-h-[80px]"
         />
         <p className="text-xs text-gray-500">Optional</p>
       </div>
@@ -290,6 +302,7 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
           <Input
             {...register('king_julien_favorite')}
             placeholder="Royal choice..."
+            className="h-10 md:h-9"
           />
         </CardContent>
       </Card>
@@ -309,18 +322,29 @@ export default function AddVisitForm({ onSuccess, prefilledCountryId = null }) {
           <Input
             {...register('mort_favorite')}
             placeholder="Mort's delight..."
+            className="h-10 md:h-9"
           />
         </CardContent>
       </Card>
 
-      {/* Submit Button */}
-      <Button 
-        type="submit" 
-        className="w-full bg-purple-600 hover:bg-purple-700"
-        disabled={isSubmitting || !selectedCuisine || (isFusion && !selectedFusionCuisine)}
-      >
-        {isSubmitting ? 'Adding Visit...' : 'Add Visit'}
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex gap-3 pt-2">
+        <Button 
+          type="button"
+          variant="outline"
+          onClick={handleCancel}
+          className="flex-1 h-12 md:h-10"
+        >
+          Cancel
+        </Button>
+        <Button 
+          type="submit" 
+          className="flex-1 bg-purple-600 hover:bg-purple-700 h-12 md:h-10"
+          disabled={isSubmitting || !selectedCuisine || (isFusion && !selectedFusionCuisine)}
+        >
+          {isSubmitting ? 'Adding Visit...' : 'Add Visit'}
+        </Button>
+      </div>
     </form>
   )
 }

@@ -45,12 +45,12 @@ export default function LandingPage({ onSwitchToMap }) {
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gradient-to-br from-navy-900 via-blue-900 to-indigo-900">
       {/* Title - Positioned at top */}
-      <div className="absolute top-8 left-0 right-0 z-10">
+      <div className="absolute top-4 md:top-8 left-0 right-0 z-10 px-4">
         <div className={`transition-all duration-1500 ease-out transform ${
           titleVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
         }`}>
-          <div className="bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-blue-600/90 backdrop-blur-md border-b-4 border-blue-400/50 shadow-2xl">
-            <h1 className="text-4xl md:text-6xl font-serif font-bold text-white text-center py-8 px-4 animate-pulse">
+          <div className="bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-blue-600/90 backdrop-blur-md border-b-4 border-blue-400/50 shadow-2xl rounded-lg">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-6xl font-serif font-bold text-white text-center py-4 md:py-8 px-2 md:px-4 animate-pulse leading-tight">
               King Julien and Mort's World Tour
             </h1>
           </div>
@@ -58,27 +58,27 @@ export default function LandingPage({ onSwitchToMap }) {
       </div>
 
       {/* Image - Positioned in center */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 px-4">
         <div className={`transition-all duration-1000 ease-out transform ${
           imageVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'
         }`}>
-                      <img 
-              src="https://customer-assets.emergentagent.com/job_74a423f5-a363-49c8-932a-8852309584b5/artifacts/8sfdsf0i_kj%26mort.png"
-              alt="King Julien and Mort's World Tour"
-              className="max-w-xl max-h-96 object-contain cursor-pointer hover:scale-105 transition-all duration-300 shadow-2xl rounded-lg"
-              onClick={handleImageClick}
-            />
+          <img 
+            src="https://customer-assets.emergentagent.com/job_74a423f5-a363-49c8-932a-8852309584b5/artifacts/8sfdsf0i_kj%26mort.png"
+            alt="King Julien and Mort's World Tour"
+            className="max-w-xs sm:max-w-sm md:max-w-xl max-h-64 sm:max-h-80 md:max-h-96 object-contain cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 shadow-2xl rounded-lg touch-manipulation"
+            onClick={handleImageClick}
+          />
         </div>
       </div>
 
       {/* Button - Positioned at bottom */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+      <div className="absolute bottom-4 md:bottom-8 left-1/2 transform -translate-x-1/2 z-10 px-4 w-full max-w-sm">
         <div className={`transition-all duration-1000 ease-out transform ${
           buttonVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'
         }`}>
           <button
             onClick={handleButtonClick}
-            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-full text-sm md:text-base shadow-2xl border-2 border-blue-400/50 transform hover:scale-105 transition-all duration-300 whitespace-nowrap"
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:from-blue-800 active:to-indigo-800 text-white font-bold py-4 md:py-3 px-6 rounded-full text-base md:text-sm shadow-2xl border-2 border-blue-400/50 transform hover:scale-105 active:scale-95 transition-all duration-300 whitespace-nowrap touch-manipulation"
           >
             🗺️ Go to Map View
           </button>
