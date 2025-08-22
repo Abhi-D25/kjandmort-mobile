@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { colorForCount, getStrokeColor, GLOBE_OUTLINES_ENABLED } from '@/lib/color'
 import { Button } from '@/components/ui/button'
@@ -16,11 +16,6 @@ const GlobeGL = dynamic(() => import('react-globe.gl'), {
     </div>
   )
 })
-
-// Create a forwardRef wrapper for GlobeGL to fix the ref warning
-const GlobeGLWithRef = React.forwardRef((props, ref) => (
-  <GlobeGL {...props} ref={ref} />
-))
 
 export default function GlobeView({ countriesData = [], maxVisitCount, onCountryClick, onSwitchToMap, isLoading }) {
   const globeRef = useRef()
