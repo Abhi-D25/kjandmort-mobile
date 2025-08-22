@@ -149,15 +149,18 @@ backend:
 
   - task: "API Routes - Countries List"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "medium"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "GET /api/countries implemented for form dropdowns but not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TEST PASSED: GET /api/countries successfully returns 6 countries with correct structure (id, name, country_code) ordered by name. Perfect for form dropdowns."
 
   - task: "API Routes - Add Restaurant Visit"
     implemented: true
