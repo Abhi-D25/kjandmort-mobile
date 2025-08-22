@@ -1,68 +1,97 @@
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Map, List, Utensils } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
-export default function LandingPage({ onSwitchToMap, onSwitchToList }) {
+export default function LandingPage({ onSwitchToMap }) {
+  const [titleVisible, setTitleVisible] = useState(false)
+  const [imageVisible, setImageVisible] = useState(false)
+  const [buttonVisible, setButtonVisible] = useState(false)
+
+  useEffect(() => {
+    // Animate title first
+    const titleTimer = setTimeout(() => {
+      setTitleVisible(true)
+    }, 500)
+
+    // Animate image after title
+    const imageTimer = setTimeout(() => {
+      setImageVisible(true)
+    }, 1000)
+
+    // Animate button last
+    const buttonTimer = setTimeout(() => {
+      setButtonVisible(true)
+    }, 1500)
+
+    return () => {
+      clearTimeout(titleTimer)
+      clearTimeout(imageTimer)
+      clearTimeout(buttonTimer)
+    }
+  }, [])
+
+  const handleImageClick = () => {
+    if (onSwitchToMap) {
+      onSwitchToMap()
+    }
+  }
+
+  const handleButtonClick = () => {
+    if (onSwitchToMap) {
+      onSwitchToMap()
+    }
+  }
+
   return (
-    <div className="flex items-center justify-center h-full p-4 md:p-8">
-      <Card className="max-w-2xl text-center">
-        <CardHeader className="pb-4">
-          {/* Beautiful King Julien & Mort Image */}
-          <div className="mx-auto mb-6">
-            <img 
+    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-br from-navy-900 via-blue-900 to-indigo-900">
+      {/* Title - Positioned at top */}
+      <div className="absolute top-8 left-0 right-0 z-10">
+        <div className={`transition-all duration-1500 ease-out transform ${
+          titleVisible ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
+        }`}>
+          <div className="bg-gradient-to-r from-blue-600/90 via-indigo-600/90 to-blue-600/90 backdrop-blur-md border-b-4 border-blue-400/50 shadow-2xl">
+            <h1 className="text-4xl md:text-6xl font-serif font-bold text-white text-center py-8 px-4 animate-pulse">
+              King Julien and Mort's World Tour
+            </h1>
+          </div>
+        </div>
+      </div>
+
+      {/* Image - Positioned in center */}
+      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10">
+        <div className={`transition-all duration-1000 ease-out transform ${
+          imageVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'
+        }`}>
+                      <img 
               src="https://customer-assets.emergentagent.com/job_74a423f5-a363-49c8-932a-8852309584b5/artifacts/8sfdsf0i_kj%26mort.png"
-              alt="King Julien and Mort's World Cuisine Adventure"
-              className="w-full max-w-md mx-auto rounded-lg shadow-lg"
+              alt="King Julien and Mort's World Tour"
+              className="max-w-xl max-h-96 object-contain cursor-pointer hover:scale-105 transition-all duration-300 shadow-2xl rounded-lg"
+              onClick={handleImageClick}
             />
-          </div>
-          
-          <CardTitle className="text-2xl md:text-3xl font-bold text-purple-700 mb-2">
-            King Julien and Mort's World Cuisine Tour
-          </CardTitle>
-          
-          <CardDescription className="text-base md:text-lg text-gray-600">
-            Embark on a royal culinary adventure around the world! Track your restaurant visits, 
-            discover amazing cuisines, and explore flavors from every corner of the globe with 
-            King Julien and his loyal companion Mort.
-          </CardDescription>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Button 
-              onClick={onSwitchToMap}
-              className="w-full bg-purple-600 hover:bg-purple-700 py-6"
-              size="lg"
-            >
-              <Map className="w-5 h-5 mr-2" />
-              Explore World Map
-            </Button>
-            
-            <Button 
-              onClick={onSwitchToList}
-              variant="outline"
-              className="w-full border-purple-600 text-purple-600 hover:bg-purple-50 py-6"
-              size="lg"
-            >
-              <List className="w-5 h-5 mr-2" />
-              View Countries List
-            </Button>
-          </div>
-          
-          <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Utensils className="w-5 h-5 text-purple-600" />
-              <span className="font-semibold text-purple-700">Start Your Adventure</span>
-            </div>
-            <p className="text-sm text-gray-600">
-              Click on countries to discover their cuisines, add restaurant visits, 
-              and watch the world map come alive with your culinary journey!
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+
+      {/* Button - Positioned at bottom */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+        <div className={`transition-all duration-1000 ease-out transform ${
+          buttonVisible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95'
+        }`}>
+          <button
+            onClick={handleButtonClick}
+            className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-6 rounded-full text-sm md:text-base shadow-2xl border-2 border-blue-400/50 transform hover:scale-105 transition-all duration-300 whitespace-nowrap"
+          >
+            🗺️ Go to Map View
+          </button>
+        </div>
+      </div>
+
+      {/* Floating particles background effect */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute top-20 left-10 w-2 h-2 bg-blue-400 rounded-full animate-ping opacity-60"></div>
+        <div className="absolute top-40 right-20 w-3 h-3 bg-indigo-400 rounded-full animate-ping opacity-60" style={{ animationDelay: '1s' }}></div>
+        <div className="absolute bottom-40 left-20 w-2 h-2 bg-blue-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '2s' }}></div>
+        <div className="absolute bottom-20 right-10 w-3 h-3 bg-indigo-300 rounded-full animate-ping opacity-60" style={{ animationDelay: '3s' }}></div>
+      </div>
     </div>
   )
 }

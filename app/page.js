@@ -72,49 +72,48 @@ function CuisineApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Header */}
-      <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 text-2xl font-bold text-purple-700">
-                <Crown className="w-8 h-8 text-yellow-500" />
-                <span>King Julien & Mort's</span>
-                <Cat className="w-6 h-6 text-gray-600" />
-              </div>
-              <div className="text-sm text-gray-600 md:text-base">
-                World Cuisine Tour
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="px-3 py-1">
-                <MapPin className="w-4 h-4 mr-1" />
-                {visitedCountries} countries
-              </Badge>
-              <Badge variant="secondary" className="px-3 py-1">
-                {totalVisits} visits
-              </Badge>
-            </div>
-          </div>
+      {/* Landing Page View - Full Screen */}
+      {currentView === 'landing' && (
+        <div className="h-screen">
+          <LandingPage onSwitchToMap={handleSwitchToMap} />
         </div>
-      </header>
+      )}
 
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        {/* Landing Page View */}
-        {currentView === 'landing' && (
-          <div className="h-[calc(100vh-200px)]">
-            <LandingPage 
-              onSwitchToMap={handleSwitchToMap}
-              onSwitchToList={handleSwitchToList}
-            />
-          </div>
-        )}
+      {/* Header and Main Content for other views */}
+      {(currentView === 'map' || currentView === 'list') && (
+        <>
+          {/* Header */}
+          <header className="bg-white/80 backdrop-blur-sm border-b shadow-sm sticky top-0 z-40">
+            <div className="container mx-auto px-4 py-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 text-2xl font-bold text-purple-700">
+                    <Crown className="w-8 h-8 text-yellow-500" />
+                    <span>King Julien & Mort's</span>
+                    <Cat className="w-6 h-6 text-gray-600" />
+                  </div>
+                  <div className="text-sm text-gray-600 md:text-base">
+                    World Cuisine Tour
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="px-3 py-1">
+                    <MapPin className="w-4 h-4 mr-1" />
+                    {visitedCountries} countries
+                  </Badge>
+                  <Badge variant="secondary" className="px-3 py-1">
+                    {totalVisits} visits
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </header>
 
-        {/* Map and List Views */}
-        {(currentView === 'map' || currentView === 'list') && (
-          <div className="flex flex-col lg:flex-row gap-6">
+          {/* Main Content */}
+          <main className="container mx-auto px-4 py-6">
+            {/* Map and List Views */}
+            <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Panel - Controls */}
             <div className="lg:w-80 space-y-6">
               {/* View Toggle */}
@@ -226,17 +225,18 @@ function CuisineApp() {
               </Card>
             </div>
           </div>
+            </main>
+          </>
         )}
-      </main>
 
-      {/* Country Details Drawer */}
-      <CountryDrawer 
-        countryCode={selectedCountry}
-        visitCount={selectedCountryVisitCount}
-        isOpen={!!selectedCountry}
-        onClose={() => setSelectedCountry(null)}
-        onAddVisit={handleCountryDrawerAddVisit}
-      />
+        {/* Country Details Drawer */}
+        <CountryDrawer 
+          countryCode={selectedCountry}
+          visitCount={selectedCountryVisitCount}
+          isOpen={!!selectedCountry}
+          onClose={() => setSelectedCountry(null)}
+          onAddVisit={handleCountryDrawerAddVisit}
+        />
     </div>
   )
 }
