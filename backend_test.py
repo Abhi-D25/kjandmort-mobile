@@ -10,8 +10,8 @@ import sys
 import uuid
 from datetime import datetime
 
-# Base URL from environment
-BASE_URL = "https://julien-eats.preview.emergentagent.com/api"
+# Base URL from environment - using local URL for testing
+BASE_URL = "http://localhost:3000/api"
 
 class APITester:
     def __init__(self):
