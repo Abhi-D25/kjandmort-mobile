@@ -164,15 +164,18 @@ backend:
 
   - task: "API Routes - Add Restaurant Visit"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/api/[[...path]]/route.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "POST /api/visit implemented to add restaurant visits with fusion support but not tested yet"
+      - working: true
+        agent: "testing"
+        comment: "✅ COMPREHENSIVE TEST PASSED: POST /api/visit successfully adds restaurant visits with all required fields. Fusion restaurant functionality working perfectly - tested both regular and fusion visits. Proper validation for missing required fields. Visit counts and color_intensity automatically updated in countries table."
 
 frontend:
   - task: "Main App Layout and Structure"
