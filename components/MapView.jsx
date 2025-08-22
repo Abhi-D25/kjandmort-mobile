@@ -52,8 +52,8 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                 const countryCode3 = geo.properties.ISO_A3 || geo.properties.ADM0_A3
                 const countryName = geo.properties.NAME || geo.properties.name
                 
-                // Create mapping for 2-letter to 3-letter codes for common countries
-                const codeMapping = {
+                // Create mapping for 2-letter to 3-letter codes for visited countries
+                const code2to3 = {
                   'FR': 'FRA', 'IN': 'IND', 'IT': 'ITA', 'JP': 'JPN', 'MX': 'MEX', 'TH': 'THA',
                   'US': 'USA', 'CA': 'CAN', 'GB': 'GBR', 'DE': 'DEU', 'ES': 'ESP', 'AU': 'AUS',
                   'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR'
@@ -62,19 +62,19 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                 // Try to find country data by various methods
                 let countryData = null
                 
-                // First try exact 3-letter code match
-                if (countryCode3) {
-                  countryData = countriesData.find(c => c.country_code === countryCode3)
-                }
-                
-                // Then try 2-letter code converted to 3-letter
-                if (!countryData && countryCode2 && codeMapping[countryCode2]) {
-                  countryData = countriesData.find(c => c.country_code === codeMapping[countryCode2])
-                }
-                
-                // Finally try direct 2-letter code match (in case database uses 2-letter codes)
-                if (!countryData && countryCode2) {
+                // First try direct 2-letter code match (for new database structure)
+                if (countryCode2) {
                   countryData = countriesData.find(c => c.country_code === countryCode2)
+                }
+                
+                // Then try 2-letter code converted to 3-letter (for existing database)
+                if (!countryData && countryCode2 && code2to3[countryCode2]) {
+                  countryData = countriesData.find(c => c.country_code === code2to3[countryCode2])
+                }
+                
+                // Finally try 3-letter code match (for existing database)
+                if (!countryData && countryCode3) {
+                  countryData = countriesData.find(c => c.country_code === countryCode3)
                 }
                 
                 const visitCount = countryData?.visit_count || 0
@@ -82,7 +82,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                 
                 // Debug log for countries with visits
                 if (visitCount > 0) {
-                  console.log(`Found visited country: ${countryName}, Code2: ${countryCode2}, Code3: ${countryCode3}, Visits: ${visitCount}, Color: ${fillColor}`)
+                  console.log(`🗺️ Found visited country: ${countryName} (${countryCode2}→${code2to3[countryCode2] || countryCode3}), Visits: ${visitCount}, Color: ${fillColor}`)
                 }
                 
                 return (
