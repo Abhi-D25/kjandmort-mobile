@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { colorForCount, getStrokeColor, GLOBE_OUTLINES_ENABLED } from '@/lib/color'
 import { Button } from '@/components/ui/button'
