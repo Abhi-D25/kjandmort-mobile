@@ -247,7 +247,6 @@ async function clearAndPopulateCountries() {
       name: country.country_name,
       country_code: iso3to2[country.country_code] || country.country_code, // Convert to 2-letter or keep original
       cuisine_style: country.main_cuisine,
-      cuisine_description: country.cuisine_description,
       visit_count: 0,
       color_intensity: 0
     }))
