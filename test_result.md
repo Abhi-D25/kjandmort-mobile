@@ -286,6 +286,18 @@ frontend:
         agent: "testing"
         comment: "❌ CRITICAL INFRASTRUCTURE ISSUE: External domain (https://cuisine-tracker-2.preview.emergentagent.com/api/*) returns 502 errors for all API endpoints, while local endpoints (http://localhost:3000/api/*) work perfectly. This breaks all frontend data loading. All API endpoints (/api/aggregate, /api/cuisines, /api/countries, /api/visit) are implemented correctly and return proper data locally. Issue is with Kubernetes ingress routing configuration."
 
+  - task: "Edit and Delete Restaurant Visits"
+    implemented: true
+    working: false
+    file: "/app/components/EditVisitModal.jsx, /app/components/DeleteConfirmModal.jsx"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: true
+    status_history:
+      - working: false
+        agent: "testing"
+        comment: "🔧 EDIT/DELETE FUNCTIONALITY TESTING: ✅ IMPLEMENTATION COMPLETE: EditVisitModal.jsx and DeleteConfirmModal.jsx are properly implemented with form validation, pre-population, and API integration (PUT /api/visit/:id and DELETE /api/visit/:id). Edit (blue pencil) and Delete (red trash) buttons are correctly integrated into CountryPopup.jsx. ✅ ADD VISIT CONFIRMED WORKING: Successfully added restaurant visit through form. ❌ BLOCKED BY API ISSUE: Cannot test edit/delete end-to-end because API endpoints return 502 errors, preventing data loading and country popup access. The edit/delete implementation is correct but blocked by API routing infrastructure issue."
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
