@@ -17,6 +17,11 @@ const GlobeGL = dynamic(() => import('react-globe.gl'), {
   )
 })
 
+// Create a forwardRef wrapper for GlobeGL to fix the ref warning
+const GlobeGLWithRef = React.forwardRef((props, ref) => (
+  <GlobeGL {...props} ref={ref} />
+))
+
 export default function GlobeView({ countriesData = [], maxVisitCount, onCountryClick, onSwitchToMap, isLoading }) {
   const globeRef = useRef()
   const [globeData, setGlobeData] = useState([])
