@@ -19,6 +19,7 @@ const queryClient = new QueryClient()
 function CuisineApp() {
   const [currentView, setCurrentView] = useState('globe')
   const [selectedCountry, setSelectedCountry] = useState(null)
+  const [selectedCountryVisitCount, setSelectedCountryVisitCount] = useState(0)
   const [showAddForm, setShowAddForm] = useState(false)
 
   // Query for countries data
@@ -38,12 +39,21 @@ function CuisineApp() {
   // Get max visit count for color scaling
   const maxVisitCount = Math.max(...countriesData.map(c => c.visit_count || 0), 1)
 
-  const handleCountryClick = (countryCode) => {
+  const handleCountryClick = (countryCode, visitCount = 0) => {
     setSelectedCountry(countryCode)
+    setSelectedCountryVisitCount(visitCount)
+  }
+
+  const handleSwitchToMap = () => {
+    setCurrentView('map')
   }
 
   const handleAddVisitSuccess = () => {
     setShowAddForm(false)
+    refetchCountries()
+  }
+
+  const handleCountryDrawerAddVisit = () => {
     refetchCountries()
   }
 
@@ -164,6 +174,7 @@ function CuisineApp() {
                     countriesData={countriesData}
                     maxVisitCount={maxVisitCount}
                     onCountryClick={handleCountryClick}
+                    onSwitchToMap={handleSwitchToMap}
                     isLoading={countriesLoading}
                   />
                 )}
@@ -185,7 +196,7 @@ function CuisineApp() {
                           <Card 
                             key={country.country_code} 
                             className="p-3 cursor-pointer hover:bg-purple-50 transition-colors"
-                            onClick={() => handleCountryClick(country.country_code)}
+                            onClick={() => handleCountryClick(country.country_code, country.visit_count || 0)}
                           >
                             <div className="flex justify-between items-center">
                               <span className="font-medium">{country.name}</span>
@@ -207,8 +218,10 @@ function CuisineApp() {
       {/* Country Details Drawer */}
       <CountryDrawer 
         countryCode={selectedCountry}
+        visitCount={selectedCountryVisitCount}
         isOpen={!!selectedCountry}
         onClose={() => setSelectedCountry(null)}
+        onAddVisit={handleCountryDrawerAddVisit}
       />
     </div>
   )

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from 'react-simple-maps'
-import { getColorForCount } from '@/lib/color'
+import { colorForCount } from '@/lib/color'
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
 
@@ -29,45 +29,51 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
   // Simple country center coordinates (you could expand this list)
   const getCountryCenter = (countryCode) => {
     const centers = {
-      'US': [-95.7129, 37.0902],
-      'CA': [-106.3468, 56.1304],
-      'BR': [-51.9253, -14.2351],
-      'CN': [104.1954, 35.8617],
-      'RU': [105.3188, 61.5240],
-      'AU': [133.7751, -25.2744],
-      'IN': [78.9629, 20.5937],
-      'GB': [-3.4360, 55.3781],
-      'FR': [2.2137, 46.2276],
-      'DE': [10.4515, 51.1657],
-      'IT': [12.5674, 41.8719],
-      'ES': [-3.7492, 40.4637],
-      'JP': [138.2529, 36.2048],
-      'KR': [127.7669, 35.9078],
-      'MX': [-102.5528, 23.6345],
-      'AR': [-63.6167, -38.4161],
-      'EG': [30.8025, 26.8206],
-      'ZA': [22.9375, -30.5595],
-      'NG': [8.6753, 9.0820],
-      'TH': [100.9925, 15.8700],
-      'ID': [113.9213, -0.7893],
-      'MY': [101.9758, 4.2105],
-      'SG': [103.8198, 1.3521],
-      'PH': [121.7740, 12.8797],
-      'VN': [108.2772, 14.0583]
+      'USA': [-95.7129, 37.0902],
+      'CAN': [-106.3468, 56.1304],
+      'BRA': [-51.9253, -14.2351],
+      'CHN': [104.1954, 35.8617],
+      'RUS': [105.3188, 61.5240],
+      'AUS': [133.7751, -25.2744],
+      'IND': [78.9629, 20.5937],
+      'GBR': [-3.4360, 55.3781],
+      'FRA': [2.2137, 46.2276],
+      'DEU': [10.4515, 51.1657],
+      'ITA': [12.5674, 41.8719],
+      'ESP': [-3.7492, 40.4637],
+      'JPN': [138.2529, 36.2048],
+      'KOR': [127.7669, 35.9078],
+      'MEX': [-102.5528, 23.6345],
+      'ARG': [-63.6167, -38.4161],
+      'EGY': [30.8025, 26.8206],
+      'ZAF': [22.9375, -30.5595],
+      'NGA': [8.6753, 9.0820],
+      'THA': [100.9925, 15.8700],
+      'IDN': [113.9213, -0.7893],
+      'MYS': [101.9758, 4.2105],
+      'SGP': [103.8198, 1.3521],
+      'PHL': [121.7740, 12.8797],
+      'VNM': [108.2772, 14.0583]
     }
     return centers[countryCode] || null
   }
 
-  const handleGeographyClick = (geo) => {
+  const handleGeographyClick = async (geo) => {
     const countryCode = geo.properties.ISO_A2
     if (countryCode && onCountryClick) {
-      onCountryClick(countryCode)
+      // Get visit count for this country
+      const countryData = countriesData.find(c => c.country_code === countryCode)
+      const visitCount = countryData?.visit_count || 0
+      
+      // Pass both country code and visit count to parent handler
+      onCountryClick(countryCode, visitCount)
     }
   }
 
-  const handleMarkerClick = (marker) => {
+  const handleMarkerClick = async (marker) => {
     if (onCountryClick) {
-      onCountryClick(marker.countryCode)
+      // Markers only exist for countries with visits > 0
+      onCountryClick(marker.countryCode, marker.visitCount)
     }
   }
 
@@ -101,7 +107,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                 const countryCode = geo.properties.ISO_A2
                 const countryData = countriesData.find(c => c.country_code === countryCode)
                 const visitCount = countryData?.visit_count || 0
-                const fillColor = getColorForCount(visitCount, maxVisitCount)
+                const fillColor = colorForCount(visitCount, maxVisitCount)
                 
                 return (
                   <Geography

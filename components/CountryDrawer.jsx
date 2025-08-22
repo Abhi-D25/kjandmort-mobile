@@ -1,14 +1,19 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MapPin, Calendar, Crown, Cat, Utensils } from 'lucide-react'
+import { MapPin, Calendar, Crown, Cat, Utensils, Plus } from 'lucide-react'
+import AddVisitForm from './AddVisitForm'
 
-export default function CountryDrawer({ countryCode, isOpen, onClose }) {
+export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose, onAddVisit }) {
+  const [showAddForm, setShowAddForm] = useState(false)
+
   const { data: countryData, isLoading } = useQuery({
     queryKey: ['country', countryCode],
     queryFn: async () => {
@@ -26,6 +31,12 @@ export default function CountryDrawer({ countryCode, isOpen, onClose }) {
       month: 'short',
       day: 'numeric'
     })
+  }
+
+  const handleAddVisitSuccess = (result) => {
+    setShowAddForm(false)
+    onAddVisit?.(result)
+    onClose()
   }
 
   if (!isOpen) return null
@@ -53,28 +64,73 @@ export default function CountryDrawer({ countryCode, isOpen, onClose }) {
             </div>
           ) : countryData ? (
             <div className="space-y-4">
-              {/* Cuisine Summary - shown when no visits */}
+              {/* For countries with no visits - show cuisine summary and add button */}
               {(!countryData.visits || countryData.visits.length === 0) && (
-                <Card className="border-purple-200 bg-purple-50">
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Utensils className="w-5 h-5" />
-                      Cuisine Summary
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-700">
-                      {countryData.cuisine_summary || 
-                       `Discover the amazing flavors of ${countryData.country.name}! Add your first restaurant visit to start tracking your culinary journey.`}
-                    </p>
-                  </CardContent>
-                </Card>
+                <>
+                  <Card className="border-purple-200 bg-purple-50">
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Utensils className="w-5 h-5" />
+                        {countryData.country.name} Cuisine
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-gray-700 mb-4">
+                        {countryData.cuisine_summary || 
+                         `Discover the amazing flavors of ${countryData.country.name}! This country awaits your first culinary exploration.`}
+                      </p>
+                      
+                      {showAddForm ? (
+                        <div className="mt-4">
+                          <h4 className="font-medium mb-3">Add Your First Visit</h4>
+                          <AddVisitForm 
+                            onSuccess={handleAddVisitSuccess}
+                            prefilledCountryId={countryData.country.id}
+                          />
+                        </div>
+                      ) : (
+                        <Button 
+                          onClick={() => setShowAddForm(true)}
+                          className="w-full bg-purple-600 hover:bg-purple-700"
+                        >
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add First Visit
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                </>
               )}
 
-              {/* Restaurant Visits */}
+              {/* For countries with visits - show restaurant list */}
               {countryData.visits && countryData.visits.length > 0 && (
                 <div className="space-y-3">
-                  <h3 className="font-semibold text-lg">Restaurant Visits</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-semibold text-lg">Restaurant Visits</h3>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowAddForm(true)}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Visit
+                    </Button>
+                  </div>
+
+                  {showAddForm && (
+                    <Card className="border-green-200 bg-green-50">
+                      <CardHeader>
+                        <CardTitle className="text-base">Add New Visit</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <AddVisitForm 
+                          onSuccess={handleAddVisitSuccess}
+                          prefilledCountryId={countryData.country.id}
+                        />
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {countryData.visits.map((visit, index) => (
                     <Card key={visit.id} className="border-l-4 border-l-purple-500">
                       <CardHeader className="pb-3">
@@ -101,11 +157,13 @@ export default function CountryDrawer({ countryCode, isOpen, onClose }) {
                       </CardHeader>
                       
                       <CardContent className="space-y-3">
-                        {/* Items Devoured */}
-                        <div>
-                          <h4 className="font-medium text-sm mb-1">Items Devoured</h4>
-                          <p className="text-sm text-gray-600">{visit.items_devoured}</p>
-                        </div>
+                        {/* Items Devoured - Only show if not empty */}
+                        {visit.items_devoured && (
+                          <div>
+                            <h4 className="font-medium text-sm mb-1">Items Devoured</h4>
+                            <p className="text-sm text-gray-600">{visit.items_devoured}</p>
+                          </div>
+                        )}
 
                         {/* Favorites */}
                         {(visit.king_julien_favorite || visit.mort_favorite) && (
