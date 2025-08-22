@@ -313,6 +313,7 @@ function CuisineApp() {
                         countriesData={countriesData}
                         maxVisitCount={maxVisitCount}
                         onCountryClick={handleCountryClick}
+                        onDataRefresh={refetchCountries}
                         isLoading={countriesLoading}
                       />
                     )}
@@ -403,6 +404,7 @@ function CuisineApp() {
                       countriesData={countriesData}
                       maxVisitCount={maxVisitCount}
                       onCountryClick={handleCountryClick}
+                      onDataRefresh={refetchCountries}
                       isLoading={countriesLoading}
                     />
                   )}

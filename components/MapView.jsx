@@ -7,7 +7,7 @@ import CountryPopup from './CountryPopup'
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
 
-export default function MapView({ countriesData = [], maxVisitCount, onCountryClick, isLoading }) {
+export default function MapView({ countriesData = [], maxVisitCount, onCountryClick, onDataRefresh, isLoading }) {
   const [popupData, setPopupData] = useState({
     isOpen: false,
     countryName: '',
@@ -216,7 +216,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
         countryName={popupData.countryName}
         countryData={popupData.countryData}
         restaurants={popupData.restaurants}
-        onDataRefresh={onCountryClick} // Trigger parent to refresh data
+        onDataRefresh={onDataRefresh} // Trigger parent to refresh data
       />
     </>
   )
