@@ -222,6 +222,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ COMPREHENSIVE TEST PASSED: Map view component working correctly. SVG world map renders with country paths (found multiple geography elements). Country click functionality implemented and triggers country drawer. Map markers for visited countries working. Color coding system functional when data loads."
+      - working: true
+        agent: "testing"
+        comment: "✅ UPDATED TEST RESULTS: Map click functionality extensively tested and working. Successfully verified clicking on France (purple/visited country) opens popup with country details and cuisine information. Popup system fully functional with proper close button. Map displays 198 geography paths with interactive clicking. Countries database expansion confirmed - Statistics show 'Countries Remaining: 191' (exactly in expected 191-193 range). Color coding system working (purple for visited, white for unvisited). Core functionality of showing restaurant visits for visited countries and cuisine descriptions for unvisited countries is implemented and working correctly."
 
   - task: "Add Visit Form"
     implemented: true
