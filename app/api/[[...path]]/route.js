@@ -1,19 +1,5 @@
-import { MongoClient } from 'mongodb'
-import { v4 as uuidv4 } from 'uuid'
 import { NextResponse } from 'next/server'
-
-// MongoDB connection
-let client
-let db
-
-async function connectToMongo() {
-  if (!client) {
-    client = new MongoClient(process.env.MONGO_URL)
-    await client.connect()
-    db = client.db(process.env.DB_NAME)
-  }
-  return db
-}
+import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, addRestaurantVisit } from '../../../lib/supabase.js'
 
 // Helper function to handle CORS
 function handleCORS(response) {
@@ -36,49 +22,77 @@ async function handleRoute(request, { params }) {
   const method = request.method
 
   try {
-    const db = await connectToMongo()
-
-    // Root endpoint - GET /api/root (since /api/ is not accessible with catch-all)
-    if (route === '/root' && method === 'GET') {
-      return handleCORS(NextResponse.json({ message: "Hello World" }))
-    }
-    // Root endpoint - GET /api/root (since /api/ is not accessible with catch-all)
+    // Root endpoint
     if (route === '/' && method === 'GET') {
-      return handleCORS(NextResponse.json({ message: "Hello World" }))
+      return handleCORS(NextResponse.json({ message: "King Julien's World Cuisine Tour API" }))
     }
 
-    // Status endpoints - POST /api/status
-    if (route === '/status' && method === 'POST') {
-      const body = await request.json()
+    // GET /api/aggregate - Get all countries with visit counts for map coloring
+    if (route === '/aggregate' && method === 'GET') {
+      const data = await getCountriesAggregate()
+      return handleCORS(NextResponse.json(data))
+    }
+
+    // GET /api/country?code=XX - Get country details with restaurants
+    if (route === '/country' && method === 'GET') {
+      const url = new URL(request.url)
+      const countryCode = url.searchParams.get('code')
       
-      if (!body.client_name) {
+      if (!countryCode) {
         return handleCORS(NextResponse.json(
-          { error: "client_name is required" }, 
+          { error: "Country code is required" }, 
           { status: 400 }
         ))
       }
 
-      const statusObj = {
-        id: uuidv4(),
-        client_name: body.client_name,
-        timestamp: new Date()
-      }
-
-      await db.collection('status_checks').insertOne(statusObj)
-      return handleCORS(NextResponse.json(statusObj))
+      const data = await getCountryDetails(countryCode)
+      return handleCORS(NextResponse.json(data))
     }
 
-    // Status endpoints - GET /api/status
-    if (route === '/status' && method === 'GET') {
-      const statusChecks = await db.collection('status_checks')
-        .find({})
-        .limit(1000)
-        .toArray()
+    // GET /api/countries - Get all countries for dropdowns
+    if (route === '/countries' && method === 'GET') {
+      const data = await getAllCountries()
+      return handleCORS(NextResponse.json(data))
+    }
 
-      // Remove MongoDB's _id field from response
-      const cleanedStatusChecks = statusChecks.map(({ _id, ...rest }) => rest)
+    // POST /api/visit - Add a new restaurant visit
+    if (route === '/visit' && method === 'POST') {
+      const body = await request.json()
       
-      return handleCORS(NextResponse.json(cleanedStatusChecks))
+      // Validate required fields
+      const { 
+        country_id, 
+        restaurant_name, 
+        location, 
+        items_devoured, 
+        king_julien_favorite, 
+        mort_favorite, 
+        is_fusion, 
+        fusion_country_id 
+      } = body
+
+      if (!country_id || !restaurant_name || !location || !items_devoured) {
+        return handleCORS(NextResponse.json(
+          { error: "Missing required fields: country_id, restaurant_name, location, items_devoured" }, 
+          { status: 400 }
+        ))
+      }
+
+      // Prepare visit data
+      const visitData = {
+        country_id,
+        restaurant_name,
+        location,
+        items_devoured,
+        king_julien_favorite: king_julien_favorite || null,
+        mort_favorite: mort_favorite || null,
+        is_fusion: is_fusion || false,
+        fusion_country_id: fusion_country_id || null,
+        visit_date: new Date().toISOString().split('T')[0] // Today's date
+      }
+
+      const result = await addRestaurantVisit(visitData)
+      return handleCORS(NextResponse.json(result))
     }
 
     // Route not found
@@ -90,7 +104,7 @@ async function handleRoute(request, { params }) {
   } catch (error) {
     console.error('API Error:', error)
     return handleCORS(NextResponse.json(
-      { error: "Internal server error" }, 
+      { error: error.message || "Internal server error" }, 
       { status: 500 }
     ))
   }
