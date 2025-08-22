@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CUISINE_COLORS, getColorThresholds } from '@/lib/color'
+import { CUISINE_HEAT_PALETTE, getColorThresholds, colorForCount } from '@/lib/color'
 import { Palette } from 'lucide-react'
 
 export default function Legend({ maxCount }) {
@@ -12,40 +12,54 @@ export default function Legend({ maxCount }) {
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Palette className="w-5 h-5" />
-          Color Legend
+          Visit Heat Scale
         </CardTitle>
         <CardDescription>
-          Countries colored by visit frequency
+          Darker means more visits
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-2">
-          {thresholds.map((threshold, index) => {
-            const nextThreshold = thresholds[index + 1]
-            const color = CUISINE_COLORS[index]
+        <div className="flex flex-wrap gap-2 mb-3">
+          {thresholds.slice(1).map((threshold, index) => {
+            const color = colorForCount(threshold, maxCount)
+            const isLast = index === thresholds.length - 2
             
             let label
-            if (threshold === 0) {
-              label = "No visits"
-            } else if (nextThreshold) {
-              label = threshold === 1 ? "1 visit" : `${threshold}${nextThreshold - 1 > threshold ? '-' + (nextThreshold - 1) : ''} visits`
+            if (threshold === 1) {
+              label = "1"
+            } else if (isLast) {
+              label = `${threshold}+`
             } else {
-              label = `${threshold}+ visits`
+              const prevThreshold = thresholds[index]
+              if (threshold - prevThreshold === 1) {
+                label = threshold.toString()
+              } else {
+                label = `${prevThreshold + 1}-${threshold}`
+              }
             }
             
             return (
-              <div key={threshold} className="flex items-center gap-3">
+              <div key={threshold} className="flex items-center gap-2">
                 <div 
-                  className="w-4 h-4 rounded border border-gray-300"
+                  className="w-6 h-6 rounded border border-gray-300 flex items-center justify-center"
                   style={{ backgroundColor: color }}
-                />
-                <span className="text-sm text-gray-600">{label}</span>
+                >
+                  <span className="text-xs font-medium text-gray-700">
+                    {label}
+                  </span>
+                </div>
               </div>
             )
           })}
         </div>
         
-        <div className="mt-4 pt-3 border-t text-xs text-gray-500">
+        {/* White swatch for no visits */}
+        <div className="flex items-center gap-2 pt-2 border-t">
+          <div className="w-6 h-6 rounded border-2 border-gray-300 bg-white"></div>
+          <span className="text-sm text-gray-600">No visits</span>
+        </div>
+        
+        <div className="mt-3 pt-2 border-t text-xs text-gray-500">
           Max visits: {maxCount}
         </div>
       </CardContent>

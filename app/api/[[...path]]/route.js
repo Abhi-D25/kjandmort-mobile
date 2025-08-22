@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, addRestaurantVisit } from '../../../lib/supabase.js'
+import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, getCuisines, addRestaurantVisit } from '../../../lib/supabase.js'
 
 // Helper function to handle CORS
 function handleCORS(response) {
@@ -49,9 +49,18 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(data))
     }
 
-    // GET /api/countries - Get all countries for dropdowns
+    // GET /api/countries?cuisine=XX - Get all countries for dropdowns with optional cuisine filter
     if (route === '/countries' && method === 'GET') {
-      const data = await getAllCountries()
+      const url = new URL(request.url)
+      const cuisine = url.searchParams.get('cuisine')
+      
+      const data = await getAllCountries(cuisine)
+      return handleCORS(NextResponse.json(data))
+    }
+
+    // GET /api/cuisines - Get distinct cuisines for form dropdown
+    if (route === '/cuisines' && method === 'GET') {
+      const data = await getCuisines()
       return handleCORS(NextResponse.json(data))
     }
 
@@ -71,19 +80,19 @@ async function handleRoute(request, { params }) {
         fusion_country_id 
       } = body
 
-      if (!country_id || !restaurant_name || !location || !items_devoured) {
+      if (!country_id || !restaurant_name || !location) {
         return handleCORS(NextResponse.json(
-          { error: "Missing required fields: country_id, restaurant_name, location, items_devoured" }, 
+          { error: "Missing required fields: country_id, restaurant_name, location" }, 
           { status: 400 }
         ))
       }
 
-      // Prepare visit data
+      // Prepare visit data - items_devoured is now optional
       const visitData = {
         country_id,
         restaurant_name,
         location,
-        items_devoured,
+        items_devoured: items_devoured || '', // Allow empty items
         king_julien_favorite: king_julien_favorite || null,
         mort_favorite: mort_favorite || null,
         is_fusion: is_fusion || false,
