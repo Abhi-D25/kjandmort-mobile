@@ -112,7 +112,7 @@ export default function GlobeView({ countriesData = [], maxVisitCount, onCountry
 
   return (
     <div className="w-full h-full">
-      <Globe
+      <GlobeGL
         ref={globeRef}
         globeImageUrl="//unpkg.com/three-globe/example/img/earth-night.jpg"
         backgroundImageUrl="//unpkg.com/three-globe/example/img/night-sky.png"
