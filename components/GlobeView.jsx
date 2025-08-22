@@ -89,7 +89,7 @@ export default function GlobeView({ countriesData = [], maxVisitCount, onCountry
         <Card className="max-w-md text-center">
           <CardHeader>
             <div className="mx-auto mb-4">
-              <Globe className="w-24 h-24 text-purple-600 mx-auto animate-pulse" />
+              <GlobeIcon className="w-24 h-24 text-purple-600 mx-auto animate-pulse" />
             </div>
             <CardTitle className="text-2xl">Explore the World</CardTitle>
             <CardDescription>
