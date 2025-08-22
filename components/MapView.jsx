@@ -47,20 +47,43 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
           <Geographies geography={geoUrl}>
             {({ geographies }) =>
               geographies.map((geo) => {
-                const countryCode = geo.properties.ISO_A2
-                const countryCode3 = geo.properties.ISO_A3
+                // Try different property names for country codes
+                const countryCode2 = geo.properties.ISO_A2
+                const countryCode3 = geo.properties.ISO_A3 || geo.properties.ADM0_A3
+                const countryName = geo.properties.NAME || geo.properties.name
                 
-                // Debug: log a few countries to see the codes
-                if (['FR', 'IN', 'IT', 'JP', 'MX', 'TH'].includes(countryCode) || ['FRA', 'IND', 'ITA', 'JPN', 'MEX', 'THA'].includes(countryCode3)) {
-                  console.log(`Country: ${geo.properties.NAME}, ISO_A2: ${countryCode}, ISO_A3: ${countryCode3}`)
+                // Create mapping for 2-letter to 3-letter codes for common countries
+                const codeMapping = {
+                  'FR': 'FRA', 'IN': 'IND', 'IT': 'ITA', 'JP': 'JPN', 'MX': 'MEX', 'TH': 'THA',
+                  'US': 'USA', 'CA': 'CAN', 'GB': 'GBR', 'DE': 'DEU', 'ES': 'ESP', 'AU': 'AUS',
+                  'BR': 'BRA', 'CN': 'CHN', 'RU': 'RUS', 'KR': 'KOR'
                 }
                 
-                // Try matching both 2-letter and 3-letter codes
-                const countryData = countriesData.find(c => 
-                  c.country_code === countryCode || c.country_code === countryCode3
-                )
+                // Try to find country data by various methods
+                let countryData = null
+                
+                // First try exact 3-letter code match
+                if (countryCode3) {
+                  countryData = countriesData.find(c => c.country_code === countryCode3)
+                }
+                
+                // Then try 2-letter code converted to 3-letter
+                if (!countryData && countryCode2 && codeMapping[countryCode2]) {
+                  countryData = countriesData.find(c => c.country_code === codeMapping[countryCode2])
+                }
+                
+                // Finally try direct 2-letter code match (in case database uses 2-letter codes)
+                if (!countryData && countryCode2) {
+                  countryData = countriesData.find(c => c.country_code === countryCode2)
+                }
+                
                 const visitCount = countryData?.visit_count || 0
                 const fillColor = colorForCount(visitCount, maxVisitCount)
+                
+                // Debug log for countries with visits
+                if (visitCount > 0) {
+                  console.log(`Found visited country: ${countryName}, Code2: ${countryCode2}, Code3: ${countryCode3}, Visits: ${visitCount}, Color: ${fillColor}`)
+                }
                 
                 return (
                   <Geography
