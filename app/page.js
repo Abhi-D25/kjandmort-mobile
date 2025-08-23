@@ -7,7 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Globe, Map, List, Plus, MapPin, Crown, Cat, Menu, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Globe, Map, List, Plus, MapPin, Crown, Cat, Menu, X, Search, X as XIcon } from 'lucide-react'
 import LandingPage from '@/components/LandingPage'
 import MapView from '@/components/MapView'
 import AddVisitForm from '@/components/AddVisitForm'
@@ -24,6 +25,7 @@ function CuisineApp() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [dataVersion, setDataVersion] = useState(0) // Force re-renders when data changes
+  const [searchTerm, setSearchTerm] = useState('') // Search term for country filtering
   const isMobile = useIsMobile()
   const queryClient = useQueryClient()
 
@@ -114,6 +116,9 @@ function CuisineApp() {
     // Close the drawer to refresh the list view
     setSelectedCountry(null)
     
+    // Switch to list view to show the updated data immediately
+    setCurrentView('list')
+    
     // Force a complete re-render after a short delay
     setTimeout(() => {
       console.log('🔄 Forcing complete re-render after delete...')
@@ -137,6 +142,11 @@ function CuisineApp() {
     // Close the drawer to refresh the list view
     setSelectedCountry(null)
   }
+
+  // Filter countries based on search term
+  const filteredCountries = countriesData.filter(country =>
+    country.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
   const totalVisits = countriesData.reduce((sum, country) => sum + (country.visit_count || 0), 0)
   const visitedCountries = countriesData.filter(c => (c.visit_count || 0) > 0).length
@@ -360,8 +370,29 @@ function CuisineApp() {
                     {currentView === 'list' && (
                       <div className="p-6 h-full overflow-y-auto" key={`list-${dataVersion}-${countriesData.length}-${totalVisits}`}>
                         <h3 className="text-lg font-semibold mb-4">All Countries</h3>
+                        
+                        {/* Search Bar */}
+                        <div className="relative mb-4">
+                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                          <Input
+                            type="text"
+                            placeholder="Search countries..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10 pr-10"
+                          />
+                          {searchTerm && (
+                            <button
+                              onClick={() => setSearchTerm('')}
+                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                              <XIcon className="h-4 w-4" />
+                            </button>
+                          )}
+                        </div>
+                        
                         <div className="grid gap-2">
-                          {countriesData
+                          {filteredCountries
                             .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
                             .map((country) => (
                               <Card 
@@ -439,8 +470,29 @@ function CuisineApp() {
                   {currentView === 'list' && (
                     <div className="p-4 h-full overflow-y-auto" key={`mobile-list-${dataVersion}-${countriesData.length}-${totalVisits}`}>
                       <h3 className="text-lg font-semibold mb-4">All Countries</h3>
+                      
+                      {/* Mobile Search Bar */}
+                      <div className="relative mb-4">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                        <Input
+                          type="text"
+                          placeholder="Search countries..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10 pr-10"
+                        />
+                        {searchTerm && (
+                          <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                          >
+                            <XIcon className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      
                       <div className="grid gap-2">
-                        {countriesData
+                        {filteredCountries
                           .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
                           .map((country) => (
                             <Card 

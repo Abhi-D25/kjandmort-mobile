@@ -150,7 +150,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                     </CardHeader>
                     <CardContent>
                       <p className="text-gray-700 mb-4 text-sm md:text-base">
-                        {countryData.cuisine_summary || 
+                        {countryData.cuisine_description || 
                          `Experience the rich and diverse flavors of ${countryData.name}! This country offers a unique culinary tradition waiting to be explored. From traditional dishes passed down through generations to modern interpretations, ${countryData.name} has something special for every food lover.`}
                       </p>
                       
