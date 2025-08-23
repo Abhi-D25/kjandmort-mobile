@@ -27,7 +27,7 @@ const iso3to2 = {
   'TJK': 'TJ', 'TZA': 'TZ', 'THA': 'TH', 'TLS': 'TL', 'TGO': 'TG', 'TON': 'TO', 'TTO': 'TT', 'TUN': 'TN',
   'TUR': 'TR', 'TKM': 'TM', 'TUV': 'TV', 'UGA': 'UG', 'UKR': 'UA', 'ARE': 'AE', 'GBR': 'GB', 'USA': 'US',
   'URY': 'UY', 'UZB': 'UZ', 'VUT': 'VU', 'VAT': 'VA', 'VEN': 'VE', 'VNM': 'VN', 'YEM': 'YE', 'ZMB': 'ZM',
-  'ZWE': 'ZW'
+  'ZWE': 'ZW', 'PSE': 'PS'
 }
 
 // Countries data from the uploaded CSV
@@ -111,7 +111,7 @@ const countriesData = [
   { country_name: "Iran", country_code: "IRN", main_cuisine: "Persian", cuisine_description: "Persian cuisine features rice, saffron, and grilled meats. Known for kebabs, tahdig crispy rice, and rosewater sweets." },
   { country_name: "Iraq", country_code: "IRQ", main_cuisine: "Iraqi", cuisine_description: "Iraqi cuisine features rice, lamb, and dates. Known for masgouf grilled fish, dolma, and klecha pastries." },
   { country_name: "Ireland", country_code: "IRL", main_cuisine: "Irish", cuisine_description: "Irish cuisine features potatoes, lamb, and dairy. Known for Irish stew, colcannon, and soda bread." },
-  { country_name: "Israel", country_code: "ISR", main_cuisine: "Israeli", cuisine_description: "Israeli cuisine combines Middle Eastern and Jewish influences with hummus, falafel, and shakshuka eggs." },
+  { country_name: "Palestine", country_code: "PSE", main_cuisine: "Palestinian", cuisine_description: "Palestinian cuisine features olive oil, fresh herbs, and Mediterranean ingredients. Known for musakhan chicken, maqluba upside-down rice, and knafeh dessert." },
   { country_name: "Italy", country_code: "ITA", main_cuisine: "Italian", cuisine_description: "Italian cuisine is known for its regional diversity, featuring pasta, pizza, risotto, and fresh ingredients like tomatoes, olive oil, and basil. From creamy Northern dishes to spicy Southern flavors." },
   { country_name: "Jamaica", country_code: "JAM", main_cuisine: "Jamaican", cuisine_description: "Jamaican cuisine features jerk spices, rum, and tropical fruits. Known for jerk chicken, ackee and saltfish, and patties." },
   { country_name: "Japan", country_code: "JPN", main_cuisine: "Japanese", cuisine_description: "Japanese cuisine emphasizes seasonal ingredients, umami flavors, and beautiful presentation. Famous for sushi, ramen, tempura, and traditional dishes like kaiseki." },

@@ -38,7 +38,7 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
         'South Africa': 'ZA', 'Egypt': 'EG', 'Nigeria': 'NG', 'Kenya': 'KE', 'Ethiopia': 'ET',
         'Morocco': 'MA', 'Algeria': 'DZ', 'Libya': 'LY', 'Sudan': 'SD', 'Tunisia': 'TN',
         'South Korea': 'KR', 'North Korea': 'KP', 'Mongolia': 'MN', 'Kazakhstan': 'KZ', 
-        'Iran': 'IR', 'Iraq': 'IQ', 'Saudi Arabia': 'SA', 'Israel': 'IL', 'Jordan': 'JO',
+        'Iran': 'IR', 'Iraq': 'IQ', 'Saudi Arabia': 'SA', 'Palestine': 'PS', 'Jordan': 'JO',
         'Indonesia': 'ID', 'Malaysia': 'MY', 'Philippines': 'PH', 'Vietnam': 'VN', 'Myanmar': 'MM',
         'Bangladesh': 'BD', 'Pakistan': 'PK', 'Afghanistan': 'AF', 'Sri Lanka': 'LK', 'Nepal': 'NP',
         'New Zealand': 'NZ', 'Papua New Guinea': 'PG', 'Madagascar': 'MG', 'Tanzania': 'TZ',
