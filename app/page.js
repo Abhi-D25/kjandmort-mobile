@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useQuery, QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useQuery, useQueryClient, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -18,12 +18,14 @@ import { useIsMobile } from '@/hooks/use-mobile'
 const queryClient = new QueryClient()
 
 function CuisineApp() {
-  const [currentView, setCurrentView] = useState('landing')
+  const [currentView, setCurrentView] = useState('map')
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedCountryVisitCount, setSelectedCountryVisitCount] = useState(0)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [dataVersion, setDataVersion] = useState(0) // Force re-renders when data changes
   const isMobile = useIsMobile()
+  const queryClient = useQueryClient()
 
   // Query for countries data
   const { 
@@ -31,12 +33,18 @@ function CuisineApp() {
     isLoading: countriesLoading, 
     refetch: refetchCountries 
   } = useQuery({
-    queryKey: ['countries-aggregate'],
+    queryKey: ['countries-aggregate', dataVersion], // Include dataVersion to force cache busting
     queryFn: async () => {
+      console.log('🔄 Fetching fresh countries data...')
       const response = await fetch('/api/aggregate')
       if (!response.ok) throw new Error('Failed to fetch countries')
-      return response.json()
-    }
+      const data = await response.json()
+      console.log('🔄 Fetched countries data:', data)
+      return data
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always consider data stale to ensure fresh updates
+    cacheTime: 0 // Don't cache at all
   })
 
   // Get max visit count for color scaling
@@ -62,12 +70,72 @@ function CuisineApp() {
   }
 
   const handleAddVisitSuccess = () => {
+    console.log('✅ Handling add visit success - clearing all caches...')
     setShowAddForm(false)
+    
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Increment data version to force re-renders
+    setDataVersion(prev => prev + 1)
+    
+    // Force refetch countries data
     refetchCountries()
   }
 
   const handleCountryDrawerAddVisit = () => {
+    console.log('➕ Handling add visit - clearing all caches...')
+    
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Increment data version to force re-renders
+    setDataVersion(prev => prev + 1)
+    
+    // Force refetch countries data to update list view
     refetchCountries()
+    
+    // Close the drawer to refresh the list view
+    setSelectedCountry(null)
+  }
+
+  const handleCountryDrawerDeleteVisit = () => {
+    console.log('🗑️ Handling delete visit - clearing all caches...')
+    
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Increment data version to force re-renders
+    setDataVersion(prev => prev + 1)
+    
+    // Force refetch countries data to update list view
+    refetchCountries()
+    
+    // Close the drawer to refresh the list view
+    setSelectedCountry(null)
+    
+    // Force a complete re-render after a short delay
+    setTimeout(() => {
+      console.log('🔄 Forcing complete re-render after delete...')
+      setDataVersion(prev => prev + 1)
+      refetchCountries()
+    }, 200)
+  }
+
+  const handleCountryDrawerEditVisit = () => {
+    console.log('✏️ Handling edit visit - clearing all caches...')
+    
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Increment data version to force re-renders
+    setDataVersion(prev => prev + 1)
+    
+    // Force refetch countries data to update list view
+    refetchCountries()
+    
+    // Close the drawer to refresh the list view
+    setSelectedCountry(null)
   }
 
   const totalVisits = countriesData.reduce((sum, country) => sum + (country.visit_count || 0), 0)
@@ -75,14 +143,7 @@ function CuisineApp() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
-      {/* Landing Page View - Full Screen */}
-      {currentView === 'landing' && (
-        <div className="h-screen">
-          <LandingPage onSwitchToMap={handleSwitchToMap} />
-        </div>
-      )}
-
-      {/* Header and Main Content for other views */}
+      {/* Header and Main Content */}
       {(currentView === 'map' || currentView === 'list') && (
         <>
           {/* Header */}
@@ -90,19 +151,22 @@ function CuisineApp() {
             <div className="container mx-auto px-4 py-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 md:gap-3">
-                  <div className="flex items-center gap-1 md:gap-2 text-lg md:text-2xl font-bold text-purple-700">
+                  <button 
+                    onClick={() => setCurrentView('landing')}
+                    className="flex items-center gap-1 md:gap-2 text-lg md:text-2xl font-bold text-purple-700 hover:text-purple-800 transition-colors cursor-pointer"
+                  >
                     <Crown className="w-6 h-6 md:w-8 md:h-8 text-yellow-500" />
                     <span className="hidden sm:inline">King Julien & Mort's</span>
                     <span className="sm:hidden">KJ & Mort</span>
                     <Cat className="w-5 h-5 md:w-6 md:h-6 text-gray-600" />
-                  </div>
+                  </button>
                   <div className="text-xs md:text-sm text-gray-600">
                     <span className="hidden md:inline">World Cuisine Tour</span>
                     <span className="md:hidden">Tour</span>
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" key={`header-stats-${dataVersion}-${visitedCountries}-${totalVisits}`}>
                   <Badge variant="secondary" className="px-2 py-1 text-xs">
                     <MapPin className="w-3 h-3 mr-1" />
                     <span className="hidden sm:inline">{visitedCountries} countries</span>
@@ -148,11 +212,7 @@ function CuisineApp() {
                     setCurrentView(value)
                     setShowMobileMenu(false)
                   }} className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="landing" className="flex items-center gap-1 text-xs">
-                        <Globe className="w-3 h-3" />
-                        Home
-                      </TabsTrigger>
+                    <TabsList className="grid w-full grid-cols-2">
                       <TabsTrigger value="map" className="flex items-center gap-1 text-xs">
                         <Map className="w-3 h-3" />
                         Map
@@ -174,19 +234,11 @@ function CuisineApp() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
-                    <DialogHeader className="relative">
+                    <DialogHeader>
                       <DialogTitle>Add Restaurant Visit</DialogTitle>
                       <DialogDescription>
                         Record your latest culinary adventure!
                       </DialogDescription>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowAddForm(false)}
-                        className="absolute right-0 top-0 h-8 w-8 p-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
                     </DialogHeader>
                     <AddVisitForm onSuccess={handleAddVisitSuccess} onCancel={() => setShowAddForm(false)} />
                   </DialogContent>
@@ -199,7 +251,7 @@ function CuisineApp() {
                 </div>
 
                 {/* Stats */}
-                <div className="space-y-2">
+                <div className="space-y-2" key={`mobile-stats-${dataVersion}-${visitedCountries}-${totalVisits}`}>
                   <h3 className="font-medium">Tour Statistics</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -234,11 +286,7 @@ function CuisineApp() {
                   </CardHeader>
                   <CardContent>
                     <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
-                      <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="landing" className="flex items-center gap-1">
-                          <Globe className="w-4 h-4" />
-                          Home
-                        </TabsTrigger>
+                      <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="map" className="flex items-center gap-1">
                           <Map className="w-4 h-4" />
                           Map
@@ -261,19 +309,11 @@ function CuisineApp() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
-                    <DialogHeader className="relative">
+                    <DialogHeader>
                       <DialogTitle>Add Restaurant Visit</DialogTitle>
                       <DialogDescription>
                         Record your latest culinary adventure!
                       </DialogDescription>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowAddForm(false)}
-                        className="absolute right-0 top-0 h-8 w-8 p-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
                     </DialogHeader>
                     <AddVisitForm onSuccess={handleAddVisitSuccess} onCancel={() => setShowAddForm(false)} />
                   </DialogContent>
@@ -283,7 +323,7 @@ function CuisineApp() {
                 <Legend maxCount={maxVisitCount} />
 
                 {/* Stats */}
-                <Card>
+                <Card key={`stats-${dataVersion}-${visitedCountries}-${totalVisits}`}>
                   <CardHeader>
                     <CardTitle className="text-lg">Tour Statistics</CardTitle>
                   </CardHeader>
@@ -318,14 +358,14 @@ function CuisineApp() {
                       />
                     )}
                     {currentView === 'list' && (
-                      <div className="p-6 h-full overflow-y-auto">
+                      <div className="p-6 h-full overflow-y-auto" key={`list-${dataVersion}-${countriesData.length}-${totalVisits}`}>
                         <h3 className="text-lg font-semibold mb-4">All Countries</h3>
                         <div className="grid gap-2">
                           {countriesData
                             .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
                             .map((country) => (
                               <Card 
-                                key={country.country_code} 
+                                key={`${country.country_code}-${country.visit_count}`} 
                                 className="p-3 cursor-pointer hover:bg-purple-50 transition-colors"
                                 onClick={() => handleCountryItemClick(country.country_code, country.visit_count || 0)}
                               >
@@ -350,11 +390,7 @@ function CuisineApp() {
               {/* Mobile View Toggle */}
               <div className="mb-4">
                 <Tabs value={currentView} onValueChange={setCurrentView} className="w-full">
-                  <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="landing" className="flex items-center gap-1 text-xs">
-                      <Globe className="w-3 h-3" />
-                      Home
-                    </TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="map" className="flex items-center gap-1 text-xs">
                       <Map className="w-3 h-3" />
                       Map
@@ -377,19 +413,11 @@ function CuisineApp() {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
-                    <DialogHeader className="relative">
+                    <DialogHeader>
                       <DialogTitle>Add Restaurant Visit</DialogTitle>
                       <DialogDescription>
                         Record your latest culinary adventure!
                       </DialogDescription>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowAddForm(false)}
-                        className="absolute right-0 top-0 h-8 w-8 p-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </Button>
                     </DialogHeader>
                     <AddVisitForm onSuccess={handleAddVisitSuccess} onCancel={() => setShowAddForm(false)} />
                   </DialogContent>
@@ -409,14 +437,14 @@ function CuisineApp() {
                     />
                   )}
                   {currentView === 'list' && (
-                    <div className="p-4 h-full overflow-y-auto">
+                    <div className="p-4 h-full overflow-y-auto" key={`mobile-list-${dataVersion}-${countriesData.length}-${totalVisits}`}>
                       <h3 className="text-lg font-semibold mb-4">All Countries</h3>
                       <div className="grid gap-2">
                         {countriesData
                           .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
                           .map((country) => (
                             <Card 
-                              key={country.country_code} 
+                              key={`mobile-${country.country_code}-${country.visit_count}`} 
                               className="p-3 cursor-pointer hover:bg-purple-50 transition-colors"
                               onClick={() => handleCountryItemClick(country.country_code, country.visit_count || 0)}
                             >
@@ -438,13 +466,21 @@ function CuisineApp() {
         </>
       )}
 
+      {/* Landing Page View */}
+      {currentView === 'landing' && (
+        <LandingPage onSwitchToMap={() => setCurrentView('map')} />
+      )}
+
       {/* Country Details Drawer */}
       <CountryDrawer 
+        key={`drawer-${dataVersion}-${selectedCountry}`}
         countryCode={selectedCountry}
         visitCount={selectedCountryVisitCount}
         isOpen={!!selectedCountry}
         onClose={() => setSelectedCountry(null)}
         onAddVisit={handleCountryDrawerAddVisit}
+        onDeleteVisit={handleCountryDrawerDeleteVisit}
+        onEditVisit={handleCountryDrawerEditVisit}
       />
     </div>
   )

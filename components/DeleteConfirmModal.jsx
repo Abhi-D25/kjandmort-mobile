@@ -20,13 +20,22 @@ export default function DeleteConfirmModal({
     setLoading(true)
 
     try {
+      console.log(`🗑️ Attempting to delete visit ${visit.id} for restaurant: ${visit.restaurant_name}`)
+      
       const response = await fetch(`/api/visit/${visit.id}`, {
         method: 'DELETE'
       })
 
+      console.log(`🗑️ Delete response status: ${response.status}`)
+
       if (!response.ok) {
-        throw new Error('Failed to delete visit')
+        const errorText = await response.text()
+        console.error(`🗑️ Delete failed with status ${response.status}:`, errorText)
+        throw new Error(`Failed to delete visit: ${response.status}`)
       }
+
+      const result = await response.json()
+      console.log('🗑️ Delete successful:', result)
 
       toast({
         title: "Visit Deleted 🗑️",
@@ -36,6 +45,7 @@ export default function DeleteConfirmModal({
 
       // Notify parent component
       if (onVisitDeleted) {
+        console.log('🗑️ Calling onVisitDeleted callback')
         onVisitDeleted()
       }
 

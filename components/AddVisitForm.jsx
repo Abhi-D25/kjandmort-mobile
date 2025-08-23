@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -12,13 +12,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Crown, Cat, ChefHat, MapPin, Plus } from 'lucide-react'
 
-export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null }) {
+export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null, prefilledCuisine = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isFusion, setIsFusion] = useState(false)
-  const [selectedCuisine, setSelectedCuisine] = useState('')
+  const [selectedCuisine, setSelectedCuisine] = useState(prefilledCuisine || '')
   const [selectedFusionCuisine, setSelectedFusionCuisine] = useState('')
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
+  const queryClient = useQueryClient()
 
   // Query for cuisines list
   const { data: cuisines = [] } = useQuery({
@@ -66,7 +67,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
     setValue('fusion_country_id', '') // Reset fusion country selection
   }
 
-  // Set prefilled country if provided
+  // Set prefilled country and cuisine if provided
   useEffect(() => {
     if (prefilledCountryId && countries.length > 0) {
       const country = countries.find(c => c.id === prefilledCountryId)
@@ -76,6 +77,13 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       }
     }
   }, [prefilledCountryId, countries, setValue])
+
+  // Set prefilled cuisine if provided
+  useEffect(() => {
+    if (prefilledCuisine) {
+      setSelectedCuisine(prefilledCuisine)
+    }
+  }, [prefilledCuisine])
 
   const handleFormSubmit = async (data) => {
     setIsSubmitting(true)
@@ -107,6 +115,9 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
 
       const result = await response.json()
       
+      // Clear all caches completely
+      queryClient.clear()
+      
       // Reset form and call success callback
       reset()
       setIsFusion(false)
@@ -131,15 +142,15 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   }
 
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3 max-h-[70vh] overflow-y-auto">
       {/* Primary Cuisine Selection - First Field */}
-      <div className="space-y-2">
-        <Label htmlFor="cuisine" className="flex items-center gap-2 text-sm md:text-base">
-          <ChefHat className="w-4 h-4" />
+      <div className="space-y-1">
+        <Label htmlFor="cuisine" className="flex items-center gap-2 text-xs">
+          <ChefHat className="w-3 h-3" />
           Cuisine Type *
         </Label>
         <Select value={selectedCuisine} onValueChange={handleCuisineChange}>
-          <SelectTrigger className="h-10 md:h-9">
+          <SelectTrigger className="h-8">
             <SelectValue placeholder="Select cuisine type" />
           </SelectTrigger>
           <SelectContent>
@@ -151,21 +162,21 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           </SelectContent>
         </Select>
         {!selectedCuisine && (
-          <p className="text-xs md:text-sm text-red-600">Please select a cuisine type</p>
+          <p className="text-xs text-red-600">Please select a cuisine type</p>
         )}
       </div>
 
       {/* Country Selection - Filtered by Cuisine */}
-      <div className="space-y-2">
-        <Label htmlFor="country_id" className="flex items-center gap-2 text-sm md:text-base">
-          <MapPin className="w-4 h-4" />
+      <div className="space-y-1">
+        <Label htmlFor="country_id" className="flex items-center gap-2 text-xs">
+          <MapPin className="w-3 h-3" />
           Country *
         </Label>
         <Select 
           onValueChange={(value) => setValue('country_id', value)}
           disabled={!selectedCuisine}
         >
-          <SelectTrigger className="h-10 md:h-9">
+          <SelectTrigger className="h-8">
             <SelectValue placeholder={selectedCuisine ? "Select country" : "Select cuisine first"} />
           </SelectTrigger>
           <SelectContent>
@@ -177,10 +188,10 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           </SelectContent>
         </Select>
         {countries.length === 0 && selectedCuisine && (
-          <p className="text-xs md:text-sm text-yellow-600">No countries found for {selectedCuisine} cuisine</p>
+          <p className="text-xs text-yellow-600">No countries found for {selectedCuisine} cuisine</p>
         )}
         {errors.country_id && (
-          <p className="text-xs md:text-sm text-red-600">Country is required</p>
+          <p className="text-xs text-red-600">Country is required</p>
         )}
       </div>
 
@@ -191,26 +202,26 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           checked={isFusion}
           onCheckedChange={setIsFusion}
         />
-        <Label htmlFor="fusion" className="text-xs md:text-sm font-medium">
+        <Label htmlFor="fusion" className="text-xs font-medium">
           Fusion cuisine? (Add to second cuisine/country too)
         </Label>
       </div>
 
       {/* Fusion Cuisine and Country Selection */}
       {isFusion && (
-        <Card className="border-orange-200 bg-orange-50 p-3 md:p-4">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Plus className="w-4 h-4" />
+        <Card className="border-orange-200 bg-orange-50 p-2">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-xs flex items-center gap-2">
+              <Plus className="w-3 h-3" />
               Fusion Details
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 pt-0">
+          <CardContent className="space-y-2 pt-0">
             {/* Fusion Cuisine Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="fusion_cuisine" className="text-sm">Fusion Cuisine Type *</Label>
+            <div className="space-y-1">
+              <Label htmlFor="fusion_cuisine" className="text-xs">Fusion Cuisine Type *</Label>
               <Select value={selectedFusionCuisine} onValueChange={handleFusionCuisineChange}>
-                <SelectTrigger className="h-10 md:h-9">
+                <SelectTrigger className="h-8">
                   <SelectValue placeholder="Select fusion cuisine type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -224,13 +235,13 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
             </div>
 
             {/* Fusion Country Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="fusion_country_id" className="text-sm">Fusion Country *</Label>
+            <div className="space-y-1">
+              <Label htmlFor="fusion_country_id" className="text-xs">Fusion Country *</Label>
               <Select 
                 onValueChange={(value) => setValue('fusion_country_id', value)}
                 disabled={!selectedFusionCuisine}
               >
-                <SelectTrigger className="h-10 md:h-9">
+                <SelectTrigger className="h-8">
                   <SelectValue placeholder={selectedFusionCuisine ? "Select fusion country" : "Select fusion cuisine first"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -247,51 +258,51 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       )}
 
       {/* Restaurant Name */}
-      <div className="space-y-2">
-        <Label htmlFor="restaurant_name" className="text-sm md:text-base">Restaurant Name *</Label>
+      <div className="space-y-1">
+        <Label htmlFor="restaurant_name" className="text-xs">Restaurant Name *</Label>
         <Input
           id="restaurant_name"
           {...register('restaurant_name', { required: 'Restaurant name is required' })}
           placeholder="Enter restaurant name"
-          className="h-10 md:h-9"
+          className="h-8"
         />
         {errors.restaurant_name && (
-          <p className="text-xs md:text-sm text-red-600">{errors.restaurant_name.message}</p>
+          <p className="text-xs text-red-600">{errors.restaurant_name.message}</p>
         )}
       </div>
 
       {/* Location */}
-      <div className="space-y-2">
-        <Label htmlFor="location" className="text-sm md:text-base">Location *</Label>
+      <div className="space-y-1">
+        <Label htmlFor="location" className="text-xs">Location *</Label>
         <Input
           id="location"
           {...register('location', { required: 'Location is required' })}
           placeholder="City, Address, etc."
-          className="h-10 md:h-9"
+          className="h-8"
         />
         {errors.location && (
-          <p className="text-xs md:text-sm text-red-600">{errors.location.message}</p>
+          <p className="text-xs text-red-600">{errors.location.message}</p>
         )}
       </div>
 
       {/* Items Devoured - Optional */}
-      <div className="space-y-2">
-        <Label htmlFor="items_devoured" className="text-sm md:text-base">Items Devoured</Label>
+      <div className="space-y-1">
+        <Label htmlFor="items_devoured" className="text-xs">Items Devoured</Label>
         <Textarea
           id="items_devoured"
           {...register('items_devoured')}
           placeholder="Describe the delicious dishes you tried..."
-          rows={3}
-          className="min-h-[80px]"
+          rows={2}
+          className="min-h-[60px]"
         />
         <p className="text-xs text-gray-500">Optional</p>
       </div>
 
       {/* King Julien's Favorite */}
       <Card className="border-yellow-200 bg-yellow-50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Crown className="w-4 h-4 text-yellow-600" />
+        <CardHeader className="pb-1">
+          <CardTitle className="text-xs flex items-center gap-2">
+            <Crown className="w-3 h-3 text-yellow-600" />
             King Julien's Favorite
           </CardTitle>
           <CardDescription className="text-xs">
@@ -302,16 +313,16 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           <Input
             {...register('king_julien_favorite')}
             placeholder="Royal choice..."
-            className="h-10 md:h-9"
+            className="h-8"
           />
         </CardContent>
       </Card>
 
       {/* Mort's Favorite */}
       <Card className="border-gray-200 bg-gray-50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Cat className="w-4 h-4 text-gray-600" />
+        <CardHeader className="pb-1">
+          <CardTitle className="text-xs flex items-center gap-2">
+            <Cat className="w-3 h-3 text-gray-600" />
             Mort's Favorite
           </CardTitle>
           <CardDescription className="text-xs">
@@ -322,7 +333,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           <Input
             {...register('mort_favorite')}
             placeholder="Mort's delight..."
-            className="h-10 md:h-9"
+            className="h-8"
           />
         </CardContent>
       </Card>
@@ -333,13 +344,13 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           type="button"
           variant="outline"
           onClick={handleCancel}
-          className="flex-1 h-12 md:h-10"
+          className="flex-1 h-10"
         >
           Cancel
         </Button>
         <Button 
           type="submit" 
-          className="flex-1 bg-purple-600 hover:bg-purple-700 h-12 md:h-10"
+          className="flex-1 bg-purple-600 hover:bg-purple-700 h-10"
           disabled={isSubmitting || !selectedCuisine || (isFusion && !selectedFusionCuisine)}
         >
           {isSubmitting ? 'Adding Visit...' : 'Add Visit'}

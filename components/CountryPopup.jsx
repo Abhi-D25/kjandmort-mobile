@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { MapPin, Calendar, Users, X, Utensils, Edit, Trash2, AlertCircle, RefreshCw } from 'lucide-react'
+import { MapPin, Calendar, Users, X, Utensils, Edit, Trash2, AlertCircle, RefreshCw, Plus } from 'lucide-react'
 import EditVisitModal from './EditVisitModal'
 import DeleteConfirmModal from './DeleteConfirmModal'
+import AddVisitForm from './AddVisitForm'
 import { toast } from '@/hooks/use-toast'
 
 export default function CountryPopup({ 
@@ -24,42 +26,49 @@ export default function CountryPopup({
   const [restaurants, setRestaurants] = useState(initialRestaurants)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [showAddForm, setShowAddForm] = useState(false)
+  const queryClient = useQueryClient()
 
-  // Load restaurants when popup opens or country changes
-  useEffect(() => {
-    const loadRestaurants = async () => {
-      if (!isOpen || !countryData?.id) return
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        console.log(`🔍 Loading restaurants for country: ${countryName} (ID: ${countryData.id})`)
-        
-        const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
-        
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error(`❌ Restaurant API Error (${response.status}):`, errorText)
-          throw new Error(`Failed to load restaurants: ${response.status} ${response.statusText}`)
-        }
-
-        const data = await response.json()
-        console.log(`✅ Loaded ${data.length} restaurants:`, data)
-        
-        setRestaurants(data || [])
-        
-      } catch (error) {
-        console.error('❌ Error loading restaurants:', error)
-        setError(error.message)
-        setRestaurants([])
-      } finally {
-        setLoading(false)
+  // Use React Query for restaurants data
+  const { data: restaurantsData, isLoading: restaurantsLoading, refetch: refetchRestaurants } = useQuery({
+    queryKey: ['restaurants', countryData?.id],
+    queryFn: async () => {
+      if (!countryData?.id) return []
+      
+      console.log(`🔍 Loading restaurants for country: ${countryName} (ID: ${countryData.id})`)
+      
+      const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
+      
+      if (!response.ok) {
+        const errorText = await response.text()
+        console.error(`❌ Restaurant API Error (${response.status}):`, errorText)
+        throw new Error(`Failed to load restaurants: ${response.status} ${response.statusText}`)
       }
-    }
 
-    loadRestaurants()
-  }, [isOpen, countryData?.id, countryName])
+      const data = await response.json()
+      console.log(`✅ Loaded ${data.length} restaurants:`, data)
+      
+      return data || []
+    },
+    enabled: !!isOpen && !!countryData?.id,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0 // Don't cache at all
+  })
+
+  // Update local restaurants state when React Query data changes
+  useEffect(() => {
+    if (restaurantsData) {
+      setRestaurants(restaurantsData)
+    }
+  }, [restaurantsData])
+
+  // Use initial restaurants if provided and no React Query data yet
+  useEffect(() => {
+    if (initialRestaurants && initialRestaurants.length > 0 && !restaurantsData) {
+      console.log(`✅ Using ${initialRestaurants.length} restaurants from props`)
+      setRestaurants(initialRestaurants)
+    }
+  }, [initialRestaurants, restaurantsData])
 
   // Load countries for edit form
   useEffect(() => {
@@ -98,25 +107,18 @@ export default function CountryPopup({
   }
 
   const handleVisitUpdated = () => {
-    console.log('✅ Visit updated, refreshing data...')
+    console.log('✅ Visit updated, clearing all caches...')
     setEditModalOpen(false)
     setSelectedVisit(null)
     
-    // Reload restaurants for this country
-    if (countryData?.id) {
-      const loadRestaurants = async () => {
-        try {
-          const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
-          if (response.ok) {
-            const data = await response.json()
-            setRestaurants(data || [])
-          }
-        } catch (error) {
-          console.error('Error reloading restaurants:', error)
-        }
-      }
-      loadRestaurants()
-    }
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Force a delay and then refetch restaurants
+    setTimeout(() => {
+      console.log('🔄 Refetching restaurants after update...')
+      refetchRestaurants()
+    }, 100)
     
     // Trigger parent component to refresh data (map colors, stats)
     if (onDataRefresh) {
@@ -125,25 +127,18 @@ export default function CountryPopup({
   }
 
   const handleVisitDeleted = () => {
-    console.log('✅ Visit deleted, refreshing data...')
+    console.log('✅ Visit deleted, clearing all caches...')
     setDeleteModalOpen(false)
     setSelectedVisit(null)
     
-    // Reload restaurants for this country
-    if (countryData?.id) {
-      const loadRestaurants = async () => {
-        try {
-          const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
-          if (response.ok) {
-            const data = await response.json()
-            setRestaurants(data || [])
-          }
-        } catch (error) {
-          console.error('Error reloading restaurants:', error)
-        }
-      }
-      loadRestaurants()
-    }
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Force a delay and then refetch restaurants
+    setTimeout(() => {
+      console.log('🔄 Refetching restaurants after delete...')
+      refetchRestaurants()
+    }, 100)
     
     // Trigger parent component to refresh data (map colors, stats)
     if (onDataRefresh) {
@@ -174,6 +169,25 @@ export default function CountryPopup({
     }
   }
 
+  const handleAddVisitSuccess = () => {
+    console.log('✅ Visit added, clearing all caches...')
+    setShowAddForm(false)
+    
+    // Clear all caches completely
+    queryClient.clear()
+    
+    // Force a delay and then refetch restaurants
+    setTimeout(() => {
+      console.log('🔄 Refetching restaurants after add...')
+      refetchRestaurants()
+    }, 100)
+    
+    // Trigger parent component to refresh data (map colors, stats)
+    if (onDataRefresh) {
+      onDataRefresh()
+    }
+  }
+
   if (!isOpen || !countryName) return null
 
   const hasVisits = restaurants.length > 0
@@ -194,9 +208,18 @@ export default function CountryPopup({
                 <Badge variant="secondary" className="bg-purple-100 text-purple-800">
                   {restaurants.length} visit{restaurants.length !== 1 ? 's' : ''}
                 </Badge>
-                </Badge>
               )}
             </DialogTitle>
+            <div className="flex justify-end">
+              <Button 
+                onClick={() => setShowAddForm(true)}
+                className="bg-purple-600 hover:bg-purple-700"
+                size="sm"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Visit
+              </Button>
+            </div>
           </DialogHeader>
 
           <div className="space-y-4 md:space-y-6">
@@ -216,18 +239,8 @@ export default function CountryPopup({
               </div>
             </div>
 
-            {/* Debug Info */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="bg-gray-100 p-3 rounded text-xs">
-                <p><strong>Debug:</strong> Country ID: {countryData?.id}</p>
-                <p>Restaurants loaded: {restaurants.length}</p>
-                <p>Loading: {loading ? 'Yes' : 'No'}</p>
-                <p>Error: {error || 'None'}</p>
-              </div>
-            )}
-
             {/* Loading State */}
-            {loading && (
+            {restaurantsLoading && (
               <div className="flex items-center justify-center py-8">
                 <RefreshCw className="h-6 w-6 animate-spin text-purple-600 mr-3" />
                 <span className="text-gray-600">Loading restaurant visits...</span>
@@ -235,7 +248,7 @@ export default function CountryPopup({
             )}
 
             {/* Error State */}
-            {error && !loading && (
+            {error && !restaurantsLoading && (
               <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                 <div className="flex items-center gap-2 text-red-700 mb-2">
                   <AlertCircle className="h-5 w-5" />
@@ -255,7 +268,7 @@ export default function CountryPopup({
             )}
 
             {/* Visited Restaurants Section */}
-            {hasVisits && !loading && !error && (
+            {hasVisits && !restaurantsLoading && !error && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-green-600" />
@@ -323,7 +336,7 @@ export default function CountryPopup({
                           
                           {restaurant.mort_favorite && (
                             <div className="flex items-center gap-1">
-                              <span className="text-gray-600 font-medium text-sm">🐭 Mort:</span>
+                              <span className="text-gray-600 font-medium text-sm">🦦 Mort:</span>
                               <span className="text-xs md:text-sm">{restaurant.mort_favorite}</span>
                             </div>
                           )}
@@ -342,13 +355,36 @@ export default function CountryPopup({
             )}
 
             {/* No visits message */}
-            {!hasVisits && !loading && !error && (
+            {!hasVisits && !restaurantsLoading && !error && (
               <div className="bg-gray-50 p-4 rounded-lg text-center">
                 <p className="text-gray-600 text-sm md:text-base">
                   No restaurants visited yet in {countryName}. 
                   <br />
-                  <span className="text-xs md:text-sm">Click "Add New Visit" to start your culinary journey!</span>
+                  <span className="text-xs md:text-sm">Click "Add Visit" to start your culinary journey!</span>
                 </p>
+              </div>
+            )}
+
+            {/* Add Visit Form */}
+            {showAddForm && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-green-800">Add New Visit</h3>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowAddForm(false)}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <AddVisitForm 
+                  onSuccess={handleAddVisitSuccess}
+                  onCancel={() => setShowAddForm(false)}
+                  prefilledCountryId={countryData?.id}
+                  prefilledCuisine={countryData?.cuisine_style}
+                />
               </div>
             )}
           </div>

@@ -202,7 +202,7 @@ export default function EditVisitModal({
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="mort_favorite">🐭 Mort's Favorite</Label>
+              <Label htmlFor="mort_favorite">🦦 Mort's Favorite</Label>
               <Input
                 id="mort_favorite"
                 value={formData.mort_favorite}

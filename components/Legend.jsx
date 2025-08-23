@@ -39,7 +39,7 @@ export default function Legend({ maxCount }) {
             }
             
             return (
-              <div key={threshold} className="flex items-center gap-1 md:gap-2">
+              <div key={`legend-${index}-${threshold}`} className="flex items-center gap-1 md:gap-2">
                 <div 
                   className="w-5 h-5 md:w-6 md:h-6 rounded border border-gray-300 flex items-center justify-center"
                   style={{ backgroundColor: color }}
