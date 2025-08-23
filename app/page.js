@@ -18,7 +18,7 @@ import { useIsMobile } from '@/hooks/use-mobile'
 const queryClient = new QueryClient()
 
 function CuisineApp() {
-  const [currentView, setCurrentView] = useState('map')
+  const [currentView, setCurrentView] = useState('landing')
   const [selectedCountry, setSelectedCountry] = useState(null)
   const [selectedCountryVisitCount, setSelectedCountryVisitCount] = useState(0)
   const [showAddForm, setShowAddForm] = useState(false)
