@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Save, X, Loader2 } from 'lucide-react'
+import { Save, X, Loader2, Star } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
+import StarRating from '@/components/ui/star-rating'
 
 export default function EditVisitModal({ 
   isOpen, 
@@ -26,6 +27,7 @@ export default function EditVisitModal({
     items_devoured: '',
     king_julien_favorite: '',
     mort_favorite: '',
+    rating: 0,
     is_fusion: false,
     fusion_country_id: '',
     visit_date: ''
@@ -41,6 +43,7 @@ export default function EditVisitModal({
         items_devoured: visit.items_devoured || '',
         king_julien_favorite: visit.king_julien_favorite || '',
         mort_favorite: visit.mort_favorite || '',
+        rating: visit.rating || 0,
         is_fusion: visit.is_fusion || false,
         fusion_country_id: visit.fusion_country_id || '',
         visit_date: visit.visit_date || ''
@@ -175,6 +178,26 @@ export default function EditVisitModal({
               value={formData.visit_date}
               onChange={(e) => handleInputChange('visit_date', e.target.value)}
             />
+          </div>
+
+          {/* Rating */}
+          <div className="space-y-2">
+            <Label htmlFor="rating" className="flex items-center gap-2">
+              <Star className="w-4 h-4 text-yellow-500" />
+              Rating
+            </Label>
+            <div className="p-4 border rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+              <StarRating
+                value={formData.rating}
+                onChange={(value) => handleInputChange('rating', value)}
+                size="lg"
+                showValue={true}
+                className="justify-center"
+              />
+              <p className="text-sm text-gray-600 text-center mt-2">
+                Rate your overall experience
+              </p>
+            </div>
           </div>
 
           {/* Items Devoured */}

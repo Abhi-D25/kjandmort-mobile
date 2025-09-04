@@ -14,8 +14,9 @@ import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Crown, Cat, ChefHat, MapPin, Plus, Search } from 'lucide-react'
+import { Crown, Cat, ChefHat, MapPin, Plus, Search, Star } from 'lucide-react'
 import RestaurantSearch from './RestaurantSearch'
+import StarRating from '@/components/ui/star-rating'
 
 export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null, prefilledCuisine = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -25,6 +26,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const [cuisineOpen, setCuisineOpen] = useState(false)
   const [fusionCuisineOpen, setFusionCuisineOpen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
+  const [rating, setRating] = useState(0)
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
   const queryClient = useQueryClient()
@@ -131,6 +133,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
         items_devoured: data.items_devoured || '', // Optional field
         king_julien_favorite: data.king_julien_favorite || null,
         mort_favorite: data.mort_favorite || null,
+        rating: rating || null,
         is_fusion: isFusion,
         fusion_country_id: isFusion ? data.fusion_country_id : null
       }
@@ -160,6 +163,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       setSelectedFusionCuisine('')
       setCuisineOpen(false)
       setFusionCuisineOpen(false)
+      setRating(0)
       onSuccess?.(result)
     } catch (error) {
       console.error('Error adding visit:', error)
@@ -177,6 +181,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
     setSelectedFusionCuisine('')
     setCuisineOpen(false)
     setFusionCuisineOpen(false)
+    setRating(0)
     onCancel?.()
   }
 
@@ -412,6 +417,26 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
         {errors.location && (
           <p className="text-xs text-red-600">{errors.location.message}</p>
         )}
+      </div>
+
+      {/* Rating */}
+      <div className="space-y-1">
+        <Label htmlFor="rating" className="flex items-center gap-2 text-xs">
+          <Star className="w-3 h-3 text-yellow-500" />
+          Rating
+        </Label>
+        <div className="p-3 border rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+          <StarRating
+            value={rating}
+            onChange={setRating}
+            size="lg"
+            showValue={true}
+            className="justify-center"
+          />
+          <p className="text-xs text-gray-600 text-center mt-2">
+            How was your overall experience?
+          </p>
+        </div>
       </div>
 
       {/* Items Devoured - Optional */}

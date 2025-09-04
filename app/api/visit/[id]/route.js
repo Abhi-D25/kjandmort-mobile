@@ -37,6 +37,7 @@ export async function PUT(request, { params }) {
       items_devoured, 
       king_julien_favorite, 
       mort_favorite, 
+      rating,
       is_fusion, 
       fusion_country_id,
       visit_date
@@ -57,6 +58,7 @@ export async function PUT(request, { params }) {
       items_devoured: items_devoured || '',
       king_julien_favorite: king_julien_favorite || null,
       mort_favorite: mort_favorite || null,
+      rating: rating || null,
       is_fusion: is_fusion || false,
       fusion_country_id: fusion_country_id || null,
       visit_date: visit_date || new Date().toISOString().split('T')[0]

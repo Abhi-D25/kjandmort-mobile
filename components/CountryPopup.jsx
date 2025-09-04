@@ -10,6 +10,7 @@ import EditVisitModal from './EditVisitModal'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AddVisitForm from './AddVisitForm'
 import { toast } from '@/hooks/use-toast'
+import StarRating from '@/components/ui/star-rating'
 
 export default function CountryPopup({ 
   isOpen, 
@@ -317,9 +318,22 @@ export default function CountryPopup({
                       </div>
                       
                       <div className="space-y-2">
-                        <p className="text-gray-600 text-sm md:text-base">
-                          <span className="font-medium">Location:</span> {restaurant.location || 'Not specified'}
-                        </p>
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                          <p className="text-gray-600 text-sm md:text-base">
+                            <span className="font-medium">Location:</span> {restaurant.location || 'Not specified'}
+                          </p>
+                          {restaurant.rating && (
+                            <div className="flex items-center gap-1">
+                              <StarRating
+                                value={restaurant.rating}
+                                readOnly={true}
+                                size="sm"
+                                showValue={false}
+                              />
+                              <span className="text-sm text-gray-600">({restaurant.rating}/5)</span>
+                            </div>
+                          )}
+                        </div>
                         
                         {restaurant.items_devoured && (
                           <p className="text-gray-600 text-sm md:text-base">
