@@ -14,7 +14,8 @@ import { Check, ChevronsUpDown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Crown, Cat, ChefHat, MapPin, Plus } from 'lucide-react'
+import { Crown, Cat, ChefHat, MapPin, Plus, Search } from 'lucide-react'
+import RestaurantSearch from './RestaurantSearch'
 
 export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null, prefilledCuisine = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -23,6 +24,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const [selectedFusionCuisine, setSelectedFusionCuisine] = useState('')
   const [cuisineOpen, setCuisineOpen] = useState(false)
   const [fusionCuisineOpen, setFusionCuisineOpen] = useState(false)
+  const [showSearch, setShowSearch] = useState(false)
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
   const queryClient = useQueryClient()
@@ -65,6 +67,32 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const handleCuisineChange = (cuisine) => {
     setSelectedCuisine(cuisine)
     setValue('country_id', '') // Reset country selection
+  }
+
+  // Handle restaurant search selection
+  const handleRestaurantSearchSelect = (restaurantData) => {
+    // Auto-fill form fields based on search results
+    setValue('restaurant_name', restaurantData.restaurant_name)
+    setValue('location', restaurantData.location)
+    
+    // Set cuisine and trigger country fetch
+    setSelectedCuisine(restaurantData.cuisine_type)
+    
+    // Try to auto-select country if available
+    if (restaurantData.country_code && countries.length > 0) {
+      // Find country by country code or name
+      const matchingCountry = countries.find(c => 
+        c.country_code === restaurantData.country_code || 
+        c.name === restaurantData.country
+      )
+      
+      if (matchingCountry) {
+        setValue('country_id', matchingCountry.id)
+      }
+    }
+    
+    // Close search view
+    setShowSearch(false)
   }
 
   // Handle fusion cuisine change
@@ -152,8 +180,40 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
     onCancel?.()
   }
 
+  // Show search component if enabled
+  if (showSearch) {
+    return (
+      <div className="space-y-4">
+        <RestaurantSearch 
+          onRestaurantSelect={handleRestaurantSearchSelect}
+          onCancel={() => setShowSearch(false)}
+        />
+      </div>
+    )
+  }
+
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3 max-h-[70vh] overflow-y-auto">
+      {/* Restaurant Search Option */}
+      <div className="space-y-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setShowSearch(true)}
+          className="w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 h-9 sm:h-10 text-sm"
+        >
+          <Search className="w-4 h-4 mr-2" />
+          <span className="hidden sm:inline">Search Restaurant on Google Maps</span>
+          <span className="sm:hidden">Search Restaurants</span>
+        </Button>
+        <p className="text-xs text-gray-500 text-center">
+          Auto-fill restaurant details, cuisine, and location
+        </p>
+        <p className="text-xs text-blue-600 text-center font-medium">
+          ✨ New Feature: Search and auto-fill from Google Maps!
+        </p>
+      </div>
+
       {/* Primary Cuisine Selection - First Field */}
       <div className="space-y-1">
         <Label htmlFor="cuisine" className="flex items-center gap-2 text-xs">
