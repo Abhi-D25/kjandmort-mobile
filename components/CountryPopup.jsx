@@ -29,7 +29,7 @@ export default function CountryPopup({
   const [showAddForm, setShowAddForm] = useState(false)
   const queryClient = useQueryClient()
 
-  // Use React Query for restaurants data
+  // Use React Query for restaurants data - but prefer the restaurants passed from MapView
   const { data: restaurantsData, isLoading: restaurantsLoading, refetch: refetchRestaurants } = useQuery({
     queryKey: ['restaurants', countryData?.id],
     queryFn: async () => {
@@ -37,20 +37,21 @@ export default function CountryPopup({
       
       console.log(`🔍 Loading restaurants for country: ${countryName} (ID: ${countryData.id})`)
       
-      const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
+      // Use the new country endpoint that includes both primary and fusion restaurants
+      const response = await fetch(`/api/country?code=${countryData.country_code}`)
       
       if (!response.ok) {
         const errorText = await response.text()
-        console.error(`❌ Restaurant API Error (${response.status}):`, errorText)
-        throw new Error(`Failed to load restaurants: ${response.status} ${response.statusText}`)
+        console.error(`❌ Country API Error (${response.status}):`, errorText)
+        throw new Error(`Failed to load country data: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json()
-      console.log(`✅ Loaded ${data.length} restaurants:`, data)
+      const countryData = await response.json()
+      console.log(`✅ Loaded country data with ${countryData.restaurants?.length || 0} restaurants`)
       
-      return data || []
+      return countryData.restaurants || []
     },
-    enabled: !!isOpen && !!countryData?.id,
+    enabled: !!isOpen && !!countryData?.id && !initialRestaurants?.length, // Only fetch if no initial restaurants provided
     staleTime: 0, // Always consider data stale
     cacheTime: 0 // Don't cache at all
   })
@@ -62,13 +63,13 @@ export default function CountryPopup({
     }
   }, [restaurantsData])
 
-  // Use initial restaurants if provided and no React Query data yet
+  // Use initial restaurants if provided (from MapView) - these include both primary and fusion restaurants
   useEffect(() => {
-    if (initialRestaurants && initialRestaurants.length > 0 && !restaurantsData) {
-      console.log(`✅ Using ${initialRestaurants.length} restaurants from props`)
+    if (initialRestaurants && initialRestaurants.length > 0) {
+      console.log(`✅ Using ${initialRestaurants.length} restaurants from MapView (includes fusion restaurants)`)
       setRestaurants(initialRestaurants)
     }
-  }, [initialRestaurants, restaurantsData])
+  }, [initialRestaurants])
 
   // Load countries for edit form
   useEffect(() => {

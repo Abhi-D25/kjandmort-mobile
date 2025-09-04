@@ -8,6 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Check, ChevronsUpDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Crown, Cat, ChefHat, MapPin, Plus } from 'lucide-react'
@@ -17,6 +21,8 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const [isFusion, setIsFusion] = useState(false)
   const [selectedCuisine, setSelectedCuisine] = useState(prefilledCuisine || '')
   const [selectedFusionCuisine, setSelectedFusionCuisine] = useState('')
+  const [cuisineOpen, setCuisineOpen] = useState(false)
+  const [fusionCuisineOpen, setFusionCuisineOpen] = useState(false)
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
   const queryClient = useQueryClient()
@@ -82,6 +88,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   useEffect(() => {
     if (prefilledCuisine) {
       setSelectedCuisine(prefilledCuisine)
+      setCuisineOpen(false)
     }
   }, [prefilledCuisine])
 
@@ -123,6 +130,8 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       setIsFusion(false)
       setSelectedCuisine('')
       setSelectedFusionCuisine('')
+      setCuisineOpen(false)
+      setFusionCuisineOpen(false)
       onSuccess?.(result)
     } catch (error) {
       console.error('Error adding visit:', error)
@@ -138,6 +147,8 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
     setIsFusion(false)
     setSelectedCuisine('')
     setSelectedFusionCuisine('')
+    setCuisineOpen(false)
+    setFusionCuisineOpen(false)
     onCancel?.()
   }
 
@@ -149,18 +160,47 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           <ChefHat className="w-3 h-3" />
           Cuisine Type *
         </Label>
-        <Select value={selectedCuisine} onValueChange={handleCuisineChange}>
-          <SelectTrigger className="h-8">
-            <SelectValue placeholder="Select cuisine type" />
-          </SelectTrigger>
-          <SelectContent>
-            {cuisines.map((cuisine) => (
-              <SelectItem key={cuisine.value} value={cuisine.value}>
-                {cuisine.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <Popover open={cuisineOpen} onOpenChange={setCuisineOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={cuisineOpen}
+              className="w-full justify-between h-8 text-xs"
+            >
+              {selectedCuisine
+                ? cuisines.find((cuisine) => cuisine.value === selectedCuisine)?.label
+                : "Select cuisine type..."}
+              <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0">
+            <Command>
+              <CommandInput placeholder="Search cuisines..." className="h-8" />
+              <CommandEmpty>No cuisine found.</CommandEmpty>
+              <CommandGroup className="max-h-48 overflow-auto">
+                {cuisines.map((cuisine) => (
+                  <CommandItem
+                    key={cuisine.value}
+                    value={cuisine.value}
+                    onSelect={(currentValue) => {
+                      handleCuisineChange(currentValue)
+                      setCuisineOpen(false)
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-3 w-3",
+                        selectedCuisine === cuisine.value ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {cuisine.label}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
         {!selectedCuisine && (
           <p className="text-xs text-red-600">Please select a cuisine type</p>
         )}
@@ -220,18 +260,47 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
             {/* Fusion Cuisine Selection */}
             <div className="space-y-1">
               <Label htmlFor="fusion_cuisine" className="text-xs">Fusion Cuisine Type *</Label>
-              <Select value={selectedFusionCuisine} onValueChange={handleFusionCuisineChange}>
-                <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select fusion cuisine type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cuisines.map((cuisine) => (
-                    <SelectItem key={cuisine.value} value={cuisine.value}>
-                      {cuisine.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={fusionCuisineOpen} onOpenChange={setFusionCuisineOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={fusionCuisineOpen}
+                    className="w-full justify-between h-8 text-xs"
+                  >
+                    {selectedFusionCuisine
+                      ? cuisines.find((cuisine) => cuisine.value === selectedFusionCuisine)?.label
+                      : "Select fusion cuisine type..."}
+                    <ChevronsUpDown className="ml-2 h-3 w-3 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="Search fusion cuisines..." className="h-8" />
+                    <CommandEmpty>No cuisine found.</CommandEmpty>
+                    <CommandGroup className="max-h-48 overflow-auto">
+                      {cuisines.map((cuisine) => (
+                        <CommandItem
+                          key={cuisine.value}
+                          value={cuisine.value}
+                          onSelect={(currentValue) => {
+                            handleFusionCuisineChange(currentValue)
+                            setFusionCuisineOpen(false)
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-3 w-3",
+                              selectedFusionCuisine === cuisine.value ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {cuisine.label}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Fusion Country Selection */}

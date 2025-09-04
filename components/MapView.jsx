@@ -176,11 +176,30 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
                 geographies.map((geo, index) => {
                   const countryName = geo.properties.NAME || geo.properties.name
                   
-                  // Name-based mapping for finding country data
+                  // Name-based mapping for finding country data - use comprehensive mapping
                   const nameToCode3 = {
                     'France': 'FRA', 'India': 'IND', 'Italy': 'ITA', 'Japan': 'JPN', 'Mexico': 'MEX', 'Thailand': 'THA',
                     'United States of America': 'USA', 'United States': 'USA', 'China': 'CHN', 'Germany': 'DEU', 
-                    'Brazil': 'BRA', 'United Kingdom': 'GBR', 'Canada': 'CAN', 'Australia': 'AUS', 'Russia': 'RUS'
+                    'Brazil': 'BRA', 'United Kingdom': 'GBR', 'Canada': 'CAN', 'Australia': 'AUS', 'Russia': 'RU',
+                    'Argentina': 'AR', 'Chile': 'CL', 'Peru': 'PE', 'Colombia': 'CO', 'Venezuela': 'VE',
+                    'Spain': 'ES', 'Portugal': 'PT', 'Netherlands': 'NL', 'Belgium': 'BE', 'Switzerland': 'CH',
+                    'Austria': 'AT', 'Sweden': 'SE', 'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI',
+                    'Poland': 'PL', 'Czech Republic': 'CZ', 'Hungary': 'HU', 'Romania': 'RO', 'Ukraine': 'UA',
+                    'Turkey': 'TR', 'Greece': 'GR', 'Bulgaria': 'BG', 'Serbia': 'RS', 'Croatia': 'HR',
+                    'South Africa': 'ZA', 'Egypt': 'EG', 'Nigeria': 'NG', 'Kenya': 'KE', 'Ethiopia': 'ET',
+                    'Morocco': 'MA', 'Algeria': 'DZ', 'Libya': 'LY', 'Sudan': 'SD', 'Tunisia': 'TN',
+                    'South Korea': 'KR', 'North Korea': 'KP', 'Mongolia': 'MN', 'Kazakhstan': 'KZ', 
+                    'Iran': 'IR', 'Iraq': 'IQ', 'Saudi Arabia': 'SA', 'Palestine': 'PS', 'Jordan': 'JO',
+                    'Indonesia': 'ID', 'Malaysia': 'MY', 'Philippines': 'PH', 'Vietnam': 'VN', 'Myanmar': 'MM',
+                    'Bangladesh': 'BD', 'Pakistan': 'PK', 'Afghanistan': 'AF', 'Sri Lanka': 'LK', 'Nepal': 'NP',
+                    'New Zealand': 'NZ', 'Papua New Guinea': 'PG', 'Madagascar': 'MG', 'Tanzania': 'TZ',
+                    'Mozambique': 'MZ', 'Zimbabwe': 'ZW', 'Botswana': 'BW', 'Namibia': 'NA', 'Zambia': 'ZM',
+                    'Angola': 'AO', 'Democratic Republic of the Congo': 'CD', 'Republic of the Congo': 'CG',
+                    'Central African Republic': 'CF', 'Chad': 'TD', 'Niger': 'NE', 'Mali': 'ML', 'Burkina Faso': 'BF',
+                    'Senegal': 'SN', 'Guinea': 'GN', 'Sierra Leone': 'SL', 'Liberia': 'LR', 'Ivory Coast': 'CI',
+                    'Ghana': 'GH', 'Togo': 'TG', 'Benin': 'BJ', 'Cameroon': 'CM', 'Equatorial Guinea': 'GQ',
+                    'Gabon': 'GA', 'Uruguay': 'UY', 'Paraguay': 'PY', 'Bolivia': 'BO', 'Ecuador': 'EC',
+                    'Guyana': 'GY', 'Suriname': 'SR', 'French Guiana': 'GF'
                   }
                   
                   // Try to find country data
