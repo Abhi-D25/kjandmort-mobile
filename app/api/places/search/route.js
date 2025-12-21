@@ -62,7 +62,18 @@ export async function GET(request) {
       throw new Error(`Google Places API HTTP error: ${placesResponse.status} ${placesResponse.statusText}`)
     }
 
-    const placesData = await placesResponse.json()
+    let placesData
+    try {
+      placesData = await placesResponse.json()
+    } catch (parseError) {
+      console.error('❌ Failed to parse Google Places API response:', parseError)
+      const responseText = await placesResponse.text()
+      console.error('❌ Raw response:', responseText.substring(0, 500))
+      return handleCORS(NextResponse.json(
+        { error: "Invalid response from Google Places API. Please check your API key and try again." }, 
+        { status: 500 }
+      ))
+    }
     
     console.log('🔍 Google Places API Response:', {
       status: placesData.status,

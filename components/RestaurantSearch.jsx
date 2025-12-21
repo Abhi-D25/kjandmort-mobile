@@ -38,8 +38,36 @@ export default function RestaurantSearch({ onRestaurantSelect, onCancel }) {
       }
       
       const response = await fetch(`/api/places/search?${params}`)
-      if (!response.ok) throw new Error('Failed to search places')
-      return response.json()
+      if (!response.ok) {
+        // Try to extract error message from response
+        let errorMessage = 'Failed to search places'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+          console.error('❌ Places search API error:', {
+            status: response.status,
+            statusText: response.statusText,
+            error: errorMessage,
+            details: errorData.details
+          })
+        } catch (e) {
+          // If response is not JSON, use status text
+          errorMessage = response.statusText || errorMessage
+          console.error('❌ Places search API error (non-JSON):', {
+            status: response.status,
+            statusText: response.statusText,
+            parseError: e.message
+          })
+        }
+        throw new Error(errorMessage)
+      }
+      const data = await response.json()
+      // Check if the response contains an error field (even with 200 status)
+      if (data.error) {
+        console.error('❌ Places search API returned error in response:', data.error)
+        throw new Error(data.error)
+      }
+      return data
     },
     enabled: !!debouncedQuery.trim() && debouncedQuery.length >= 3, // Only search if 3+ characters
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -176,12 +204,39 @@ export default function RestaurantSearch({ onRestaurantSelect, onCancel }) {
               {debouncedSearchQuery.error && (
                 <Card className="border-red-200 bg-red-50">
                   <CardContent className="p-3 sm:p-4">
-                    <p className="text-xs sm:text-sm text-red-600">
-                      Error searching restaurants: {debouncedSearchQuery.error.message}
+                    <p className="text-xs sm:text-sm text-red-600 font-medium">
+                      Error searching restaurants:
                     </p>
-                    {debouncedSearchQuery.error.message.includes('Google Maps API not configured') && (
+                    <p className="text-xs sm:text-sm text-red-700 mt-1">
+                      {debouncedSearchQuery.error.message}
+                    </p>
+                    {(debouncedSearchQuery.error.message.includes('Google Maps API not configured') || 
+                      debouncedSearchQuery.error.message.includes('API not configured')) && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-xs text-red-600 font-medium">To fix this:</p>
+                        <ol className="text-xs text-red-600 list-decimal list-inside space-y-1 ml-2">
+                          <li>Create a <code className="bg-red-100 px-1 rounded">.env.local</code> file in your project root</li>
+                          <li>Add: <code className="bg-red-100 px-1 rounded">GOOGLE_MAPS_API_KEY=your_api_key_here</code></li>
+                          <li>Restart your development server</li>
+                        </ol>
+                      </div>
+                    )}
+                    {(debouncedSearchQuery.error.message.includes('REQUEST_DENIED') || 
+                      debouncedSearchQuery.error.message.includes('access denied')) && (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-xs text-red-600 font-medium">Possible causes:</p>
+                        <ul className="text-xs text-red-600 list-disc list-inside space-y-1 ml-2">
+                          <li>API key is invalid or expired</li>
+                          <li>Places API is not enabled in Google Cloud Console</li>
+                          <li>API key restrictions are blocking the request</li>
+                          <li>Billing is not enabled for your Google Cloud project</li>
+                        </ul>
+                      </div>
+                    )}
+                    {(debouncedSearchQuery.error.message.includes('OVER_QUERY_LIMIT') || 
+                      debouncedSearchQuery.error.message.includes('quota exceeded')) && (
                       <p className="text-xs text-red-500 mt-2">
-                        Please configure your Google Maps API key in the environment variables.
+                        You've exceeded your Google Maps API quota. Please try again later or check your usage in Google Cloud Console.
                       </p>
                     )}
                   </CardContent>
