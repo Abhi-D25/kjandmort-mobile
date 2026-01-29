@@ -324,12 +324,13 @@ metadata:
 
 test_plan:
   current_focus:
-    - "Progressive Web App (PWA) Conversion"
     - "Main App Layout and Structure"
+    - "Progressive Web App (PWA) Conversion"
     - "Map View Component"
     - "Add Visit Form"
   stuck_tasks:
     - "API Routing Infrastructure"
+    - "Main App Layout and Structure"
   test_all: false
   test_priority: "high_first"
 
