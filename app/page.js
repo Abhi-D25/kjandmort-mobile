@@ -14,6 +14,7 @@ import MapView from '@/components/MapView'
 import AddVisitForm from '@/components/AddVisitForm'
 import CountryDrawer from '@/components/CountryDrawer'
 import Legend from '@/components/Legend'
+import InstallPrompt from '@/components/InstallPrompt'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 const queryClient = new QueryClient()
