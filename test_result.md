@@ -318,12 +318,14 @@ metadata:
 
 test_plan:
   current_focus:
-    - "API Routing Infrastructure"
-    - "Edit and Delete Restaurant Visits"
+    - "Progressive Web App (PWA) Conversion"
+    - "Main App Layout and Structure"
+    - "Map View Component"
+    - "Add Visit Form"
   stuck_tasks:
     - "API Routing Infrastructure"
   test_all: false
-  test_priority: "critical_first"
+  test_priority: "high_first"
 
 agent_communication:
   - agent: "main"
