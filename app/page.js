@@ -535,6 +535,9 @@ function CuisineApp() {
         onDeleteVisit={handleCountryDrawerDeleteVisit}
         onEditVisit={handleCountryDrawerEditVisit}
       />
+
+      {/* PWA Install Prompt */}
+      <InstallPrompt />
     </div>
   )
 }
