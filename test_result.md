@@ -180,9 +180,9 @@ backend:
 frontend:
   - task: "Main App Layout and Structure"
     implemented: true
-    working: true
+    working: false
     file: "/app/app/page.js"
-    stuck_count: 0
+    stuck_count: 1
     priority: "high"
     needs_retesting: false
     status_history:
@@ -195,6 +195,9 @@ frontend:
       - working: true
         agent: "testing"
         comment: "✅ UPDATED TEST RESULTS: Statistics section now working correctly with real data. Countries database expansion successful - showing 'Countries Remaining: 191' which confirms expansion from ~54 to ~195 total countries. Current stats display: Countries Visited: 2, Total Restaurant Visits: 4, Countries Remaining: 191. All navigation and view switching working perfectly."
+      - working: false
+        agent: "testing"
+        comment: "❌ CRITICAL NAVIGATION ISSUE: Landing page loads beautifully with animated King Julien/Mort imagery and 'Go to Map View' button, but the button is not responding to clicks. Button is visible and properly styled but click handlers are not working. Users cannot navigate from landing page to main app. This blocks access to all main app functionality (map views, country details, add visits). The LandingPage component has proper onClick handlers (handleButtonClick and handleImageClick) but they're not triggering navigation. This is a critical user flow blocker."
 
   - task: "Globe View Component"
     implemented: true
