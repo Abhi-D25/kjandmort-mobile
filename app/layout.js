@@ -1,5 +1,6 @@
 import './globals.css'
 import { Inter } from 'next/font/google'
+import PWAUpdater from '@/components/PWAUpdater'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -67,6 +68,7 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#7c3aed" />
       </head>
       <body className={inter.className}>
+        <PWAUpdater />
         {children}
       </body>
     </html>
