@@ -47,10 +47,10 @@ export default function CountryPopup({
         throw new Error(`Failed to load country data: ${response.status} ${response.statusText}`)
       }
 
-      const countryData = await response.json()
-      console.log(`✅ Loaded country data with ${countryData.restaurants?.length || 0} restaurants`)
-      
-      return countryData.restaurants || []
+      const fetchedData = await response.json()
+      console.log(`✅ Loaded country data with ${fetchedData.restaurants?.length || 0} restaurants`)
+
+      return fetchedData.restaurants || []
     },
     enabled: !!isOpen && !!countryData?.id && !initialRestaurants?.length, // Only fetch if no initial restaurants provided
     staleTime: 0, // Always consider data stale
