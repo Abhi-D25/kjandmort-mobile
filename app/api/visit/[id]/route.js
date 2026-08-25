@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { updateRestaurantVisit, deleteRestaurantVisit } from '../../../../lib/supabase.js'
+import { sanitizeItems } from '../../../../lib/items.js'
 
 // Helper function to handle CORS
 function handleCORS(response) {
@@ -30,31 +31,41 @@ export async function PUT(request, { params }) {
     const body = await request.json()
     
     // Validate required fields
-    const { 
-      country_id, 
-      restaurant_name, 
-      location, 
-      items_devoured, 
-      king_julien_favorite, 
-      mort_favorite, 
+    const {
+      country_id,
+      restaurant_name,
+      location,
+      items,
+      items_devoured,
+      king_julien_favorite,
+      mort_favorite,
       rating,
-      is_fusion, 
+      is_fusion,
       fusion_country_id,
       visit_date
     } = body
 
     if (!country_id || !restaurant_name || !location) {
       return handleCORS(NextResponse.json(
-        { error: "Missing required fields: country_id, restaurant_name, location" }, 
+        { error: "Missing required fields: country_id, restaurant_name, location" },
         { status: 400 }
       ))
     }
 
-    // Prepare visit data
+    let cleanedItems
+    try {
+      cleanedItems = sanitizeItems(items)
+    } catch (error) {
+      return handleCORS(NextResponse.json({ error: error.message }, { status: 400 }))
+    }
+
+    // Prepare visit data. `items` is included whenever the request carried the
+    // field (even if now empty) so clearing all items persists as null.
     const visitData = {
       country_id,
       restaurant_name,
       location,
+      ...(items !== undefined && { items: cleanedItems }),
       items_devoured: items_devoured || '',
       king_julien_favorite: king_julien_favorite || null,
       mort_favorite: mort_favorite || null,

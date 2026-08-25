@@ -11,6 +11,8 @@ import DeleteConfirmModal from './DeleteConfirmModal'
 import AddVisitForm from './AddVisitForm'
 import StarRating from '@/components/ui/star-rating'
 import { invalidateVisitData } from '@/lib/query-keys'
+import ItemsDisplay from './ItemsDisplay'
+import { hasItems } from '@/lib/items'
 
 export default function CountryPopup({ 
   isOpen, 
@@ -237,10 +239,11 @@ export default function CountryPopup({
                           )}
                         </div>
                         
-                        {restaurant.items_devoured && (
-                          <p className="text-gray-600 text-sm md:text-base">
-                            <span className="font-medium">Items Devoured:</span> {restaurant.items_devoured}
-                          </p>
+                        {(hasItems(restaurant.items) || restaurant.items_devoured) && (
+                          <div className="text-gray-600 text-sm md:text-base space-y-1">
+                            <span className="font-medium">Items Devoured:</span>
+                            <ItemsDisplay items={restaurant.items} legacyText={restaurant.items_devoured} />
+                          </div>
                         )}
                         
                         <div className="flex flex-col sm:flex-row gap-2 md:gap-4">

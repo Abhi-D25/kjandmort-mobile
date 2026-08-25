@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -18,6 +17,8 @@ import { Crown, Cat, ChefHat, MapPin, Plus, Search, Star } from 'lucide-react'
 import RestaurantSearch from './RestaurantSearch'
 import StarRating from '@/components/ui/star-rating'
 import { toast } from '@/hooks/use-toast'
+import ItemsInput from './ItemsInput'
+import { emptyItems, hasItems } from '@/lib/items'
 
 export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null, prefilledCuisine = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -28,6 +29,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const [fusionCuisineOpen, setFusionCuisineOpen] = useState(false)
   const [showSearch, setShowSearch] = useState(false)
   const [rating, setRating] = useState(0)
+  const [items, setItems] = useState(emptyItems())
   
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
   const queryClient = useQueryClient()
@@ -153,7 +155,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
         country_id: data.country_id,
         restaurant_name: data.restaurant_name,
         location: data.location,
-        items_devoured: data.items_devoured || '', // Optional field
+        items: hasItems(items) ? items : null, // Optional, categorized
         king_julien_favorite: data.king_julien_favorite || null,
         mort_favorite: data.mort_favorite || null,
         rating: rating || null,
@@ -184,6 +186,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       setCuisineOpen(false)
       setFusionCuisineOpen(false)
       setRating(0)
+      setItems(emptyItems())
       onSuccess?.(result)
     } catch (error) {
       console.error('Error adding visit:', error)
@@ -206,6 +209,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
     setCuisineOpen(false)
     setFusionCuisineOpen(false)
     setRating(0)
+    setItems(emptyItems())
     onCancel?.()
   }
 
@@ -465,17 +469,10 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
         </div>
       </div>
 
-      {/* Items Devoured - Optional */}
+      {/* Items Devoured - Optional, categorized */}
       <div className="space-y-1">
-        <Label htmlFor="items_devoured" className="text-xs">Items Devoured</Label>
-        <Textarea
-          id="items_devoured"
-          {...register('items_devoured')}
-          placeholder="Describe the delicious dishes you tried..."
-          rows={2}
-          className="min-h-[60px]"
-        />
-        <p className="text-xs text-gray-500">Optional</p>
+        <Label className="text-xs">Items Devoured</Label>
+        <ItemsInput value={items} onChange={setItems} />
       </div>
 
       {/* King Julien's Favorite */}

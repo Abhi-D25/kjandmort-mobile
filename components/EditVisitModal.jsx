@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Save, X, Loader2, Star } from 'lucide-react'
 import { toast } from '@/hooks/use-toast'
 import StarRating from '@/components/ui/star-rating'
+import ItemsInput from './ItemsInput'
+import { emptyItems, normalizeItems, hasItems } from '@/lib/items'
 
 export default function EditVisitModal({ 
   isOpen, 
@@ -24,6 +26,7 @@ export default function EditVisitModal({
     country_id: '',
     restaurant_name: '',
     location: '',
+    items: emptyItems(),
     items_devoured: '',
     king_julien_favorite: '',
     mort_favorite: '',
@@ -40,6 +43,7 @@ export default function EditVisitModal({
         country_id: visit.country_id || '',
         restaurant_name: visit.restaurant_name || '',
         location: visit.location || '',
+        items: normalizeItems(visit.items),
         items_devoured: visit.items_devoured || '',
         king_julien_favorite: visit.king_julien_favorite || '',
         mort_favorite: visit.mort_favorite || '',
@@ -50,6 +54,10 @@ export default function EditVisitModal({
       })
     }
   }, [visit])
+
+  // Legacy entries wrote free text into items_devoured; keep it editable
+  // until the entry has structured items instead.
+  const showLegacyNotes = !!(visit?.items_devoured && !hasItems(visit?.items))
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -78,7 +86,15 @@ export default function EditVisitModal({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          // object = new items; null = had items, all cleared; undefined
+          // (dropped by JSON.stringify) = never had items — keeps edits of
+          // legacy entries working even before the jsonb migration runs
+          items: hasItems(formData.items) ? formData.items
+            : hasItems(visit.items) ? null
+            : undefined
+        })
       })
 
       if (!response.ok) {
@@ -200,17 +216,32 @@ export default function EditVisitModal({
             </div>
           </div>
 
-          {/* Items Devoured */}
+          {/* Items Devoured - categorized */}
           <div className="space-y-2">
-            <Label htmlFor="items_devoured">Items Devoured</Label>
-            <Textarea
-              id="items_devoured"
-              value={formData.items_devoured}
-              onChange={(e) => handleInputChange('items_devoured', e.target.value)}
-              placeholder="What delicious items did you try?"
-              rows={3}
+            <Label>Items Devoured</Label>
+            <ItemsInput
+              value={formData.items}
+              onChange={(value) => handleInputChange('items', value)}
             />
           </div>
+
+          {/* Legacy free-text items from before categories existed */}
+          {showLegacyNotes && (
+            <div className="space-y-2">
+              <Label htmlFor="items_devoured">Original notes (older entry)</Label>
+              <Textarea
+                id="items_devoured"
+                value={formData.items_devoured}
+                onChange={(e) => handleInputChange('items_devoured', e.target.value)}
+                placeholder="What delicious items did you try?"
+                rows={3}
+              />
+              <p className="text-xs text-gray-500">
+                This entry was written before item categories existed. Clear it once you've
+                re-added the items above.
+              </p>
+            </div>
+          )}
 
           {/* Favorites */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

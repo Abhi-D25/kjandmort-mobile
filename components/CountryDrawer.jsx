@@ -13,6 +13,8 @@ import AddVisitForm from './AddVisitForm'
 import EditVisitModal from './EditVisitModal'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { invalidateVisitData } from '@/lib/query-keys'
+import ItemsDisplay from './ItemsDisplay'
+import { hasItems } from '@/lib/items'
 
 export default function CountryDrawer({ countryCode, isOpen, onClose }) {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -205,10 +207,10 @@ export default function CountryDrawer({ countryCode, isOpen, onClose }) {
                         
                         <CardContent className="space-y-3">
                           {/* Items Devoured - Only show if not empty */}
-                          {visit.items_devoured && (
+                          {(hasItems(visit.items) || visit.items_devoured) && (
                             <div>
                               <h4 className="font-medium text-sm mb-1">Items Devoured</h4>
-                              <p className="text-sm text-gray-600 break-words">{visit.items_devoured}</p>
+                              <ItemsDisplay items={visit.items} legacyText={visit.items_devoured} />
                             </div>
                           )}
 
