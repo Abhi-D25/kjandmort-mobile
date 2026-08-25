@@ -7,12 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Map, List, Plus, MapPin, Crown, Cat, Menu, X, Search, X as XIcon } from 'lucide-react'
+import { Map, List, Plus, MapPin, Crown, Cat, Menu, X } from 'lucide-react'
 import LandingPage from '@/components/LandingPage'
 import MapView from '@/components/MapView'
 import AddVisitForm from '@/components/AddVisitForm'
 import CountryDrawer from '@/components/CountryDrawer'
+import CountryList from '@/components/CountryList'
 import Legend from '@/components/Legend'
 import InstallPrompt from '@/components/InstallPrompt'
 import { useIsMobile } from '@/hooks/use-mobile'
@@ -23,6 +23,7 @@ const queryClient = new QueryClient()
 function CuisineApp() {
   const [currentView, setCurrentView] = useState('landing')
   const [selectedCountry, setSelectedCountry] = useState(null)
+  const [highlightVisitId, setHighlightVisitId] = useState(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const [searchTerm, setSearchTerm] = useState('') // Search term for country filtering
@@ -45,6 +46,19 @@ function CuisineApp() {
     staleTime: 30_000
   })
 
+  // All restaurants with their country, for the list-view search
+  const { data: restaurantsIndex = [] } = useQuery({
+    queryKey: ['restaurants-index'],
+    queryFn: async () => {
+      const response = await fetch('/api/restaurants-index')
+      if (!response.ok) throw new Error('Failed to fetch restaurants')
+      return response.json()
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 30_000,
+    enabled: currentView === 'list'
+  })
+
   // Get max visit count for color scaling
   const maxVisitCount = Math.max(...countriesData.map(c => c.visit_count || 0), 1)
 
@@ -52,15 +66,20 @@ function CuisineApp() {
     setSelectedCountry(countryCode)
   }
 
+  const handleRestaurantSelect = (restaurant) => {
+    setHighlightVisitId(restaurant.id)
+    setSelectedCountry(restaurant.country_code)
+  }
+
+  const handleDrawerClose = () => {
+    setSelectedCountry(null)
+    setHighlightVisitId(null)
+  }
+
   const handleAddVisitSuccess = () => {
     setShowAddForm(false)
     invalidateVisitData(queryClient)
   }
-
-  // Filter countries based on search term
-  const filteredCountries = countriesData.filter(country =>
-    country.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
 
   const totalVisits = countriesData.reduce((sum, country) => sum + (country.visit_count || 0), 0)
   const visitedCountries = countriesData.filter(c => (c.visit_count || 0) > 0).length
@@ -281,48 +300,14 @@ function CuisineApp() {
                       />
                     )}
                     {currentView === 'list' && (
-                      <div className="p-6 h-full overflow-y-auto">
-                        <h3 className="text-lg font-semibold mb-4">All Countries</h3>
-                        
-                        {/* Search Bar */}
-                        <div className="relative mb-4">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                          <Input
-                            type="text"
-                            placeholder="Search countries..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-10"
-                          />
-                          {searchTerm && (
-                            <button
-                              onClick={() => setSearchTerm('')}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                            >
-                              <XIcon className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                        
-                        <div className="grid gap-2">
-                          {filteredCountries
-                            .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
-                            .map((country) => (
-                              <Card 
-                                key={`${country.country_code}-${country.visit_count}`} 
-                                className="p-3 cursor-pointer hover:bg-purple-50 transition-colors"
-                                onClick={() => handleCountryItemClick(country.country_code, country.visit_count || 0)}
-                              >
-                                <div className="flex justify-between items-center">
-                                  <span className="font-medium">{country.name}</span>
-                                  <Badge variant={country.visit_count > 0 ? "default" : "secondary"}>
-                                    {country.visit_count || 0} visits
-                                  </Badge>
-                                </div>
-                              </Card>
-                            ))}
-                        </div>
-                      </div>
+                      <CountryList
+                        countries={countriesData}
+                        restaurants={restaurantsIndex}
+                        searchTerm={searchTerm}
+                        onSearchChange={setSearchTerm}
+                        onCountrySelect={handleCountryItemClick}
+                        onRestaurantSelect={handleRestaurantSelect}
+                      />
                     )}
                   </CardContent>
                 </Card>
@@ -380,48 +365,14 @@ function CuisineApp() {
                     />
                   )}
                   {currentView === 'list' && (
-                    <div className="p-4 h-full overflow-y-auto">
-                      <h3 className="text-lg font-semibold mb-4">All Countries</h3>
-                      
-                      {/* Mobile Search Bar */}
-                      <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                        <Input
-                          type="text"
-                          placeholder="Search countries..."
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          className="pl-10 pr-10"
-                        />
-                        {searchTerm && (
-                          <button
-                            onClick={() => setSearchTerm('')}
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                          >
-                            <XIcon className="h-4 w-4" />
-                          </button>
-                        )}
-                      </div>
-                      
-                      <div className="grid gap-2">
-                        {filteredCountries
-                          .sort((a, b) => (b.visit_count || 0) - (a.visit_count || 0))
-                          .map((country) => (
-                            <Card 
-                              key={`mobile-${country.country_code}-${country.visit_count}`} 
-                              className="p-3 cursor-pointer hover:bg-purple-50 transition-colors"
-                              onClick={() => handleCountryItemClick(country.country_code, country.visit_count || 0)}
-                            >
-                              <div className="flex justify-between items-center">
-                                <span className="font-medium text-sm">{country.name}</span>
-                                <Badge variant={country.visit_count > 0 ? "default" : "secondary"} className="text-xs">
-                                  {country.visit_count || 0} visits
-                                </Badge>
-                              </div>
-                            </Card>
-                          ))}
-                      </div>
-                    </div>
+                    <CountryList
+                      countries={countriesData}
+                      restaurants={restaurantsIndex}
+                      searchTerm={searchTerm}
+                      onSearchChange={setSearchTerm}
+                      onCountrySelect={handleCountryItemClick}
+                      onRestaurantSelect={handleRestaurantSelect}
+                    />
                   )}
                 </CardContent>
               </Card>
@@ -439,7 +390,8 @@ function CuisineApp() {
       <CountryDrawer
         countryCode={selectedCountry}
         isOpen={!!selectedCountry}
-        onClose={() => setSelectedCountry(null)}
+        onClose={handleDrawerClose}
+        highlightVisitId={highlightVisitId}
       />
 
       {/* PWA Install Prompt */}

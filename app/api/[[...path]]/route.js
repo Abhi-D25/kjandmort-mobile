@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, getCuisines, addRestaurantVisit } from '../../../lib/supabase.js'
+import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, getCuisines, addRestaurantVisit, getRestaurantsIndex } from '../../../lib/supabase.js'
 import { sanitizeItems } from '../../../lib/items.js'
 
 // Helper function to handle CORS
@@ -62,6 +62,12 @@ async function handleRoute(request, { params }) {
     // GET /api/cuisines - Get distinct cuisines for form dropdown
     if (route === '/cuisines' && method === 'GET') {
       const data = await getCuisines()
+      return handleCORS(NextResponse.json(data))
+    }
+
+    // GET /api/restaurants-index - All restaurants with country, for search
+    if (route === '/restaurants-index' && method === 'GET') {
+      const data = await getRestaurantsIndex()
       return handleCORS(NextResponse.json(data))
     }
 

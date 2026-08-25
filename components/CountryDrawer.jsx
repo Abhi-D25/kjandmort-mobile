@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -16,11 +16,13 @@ import { invalidateVisitData } from '@/lib/query-keys'
 import ItemsDisplay from './ItemsDisplay'
 import { hasItems } from '@/lib/items'
 
-export default function CountryDrawer({ countryCode, isOpen, onClose }) {
+export default function CountryDrawer({ countryCode, isOpen, onClose, highlightVisitId = null }) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState(null)
+  const [flashVisitId, setFlashVisitId] = useState(null)
+  const cardRefs = useRef({})
   const queryClient = useQueryClient()
 
   const { data: countryData, isLoading } = useQuery({
@@ -47,6 +49,23 @@ export default function CountryDrawer({ countryCode, isOpen, onClose }) {
   })
 
   const restaurants = countryData?.restaurants ?? []
+
+  // When opened from a restaurant search result, scroll to that card and
+  // flash it briefly so the user can spot it.
+  useEffect(() => {
+    if (!isOpen || !highlightVisitId || restaurants.length === 0) return
+    const node = cardRefs.current[highlightVisitId]
+    if (!node) return
+    const timeout = setTimeout(() => {
+      node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      setFlashVisitId(highlightVisitId)
+    }, 150)
+    const clearFlash = setTimeout(() => setFlashVisitId(null), 2500)
+    return () => {
+      clearTimeout(timeout)
+      clearTimeout(clearFlash)
+    }
+  }, [isOpen, highlightVisitId, restaurants.length])
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -158,8 +177,14 @@ export default function CountryDrawer({ countryCode, isOpen, onClose }) {
                       </Button>
                     </div>
 
-                    {restaurants.map((visit, index) => (
-                      <Card key={visit.id} className="border-l-4 border-l-purple-500">
+                    {restaurants.map((visit) => (
+                      <Card
+                        key={visit.id}
+                        ref={(node) => { cardRefs.current[visit.id] = node }}
+                        className={`border-l-4 border-l-purple-500 transition-shadow duration-500 ${
+                          flashVisitId === visit.id ? 'ring-2 ring-amber-400 shadow-lg' : ''
+                        }`}
+                      >
                         <CardHeader className="pb-3">
                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                             <div className="flex-1">
