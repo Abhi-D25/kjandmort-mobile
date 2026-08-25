@@ -1,13 +1,61 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps'
+import { feature as topoFeature } from 'topojson-client'
+import { geoArea, geoBounds, geoCentroid } from 'd3-geo'
+import { Plus, Minus, RotateCcw } from 'lucide-react'
 import { colorForCount } from '@/lib/color'
+import { buildCountryNameIndex, matchGeoToCountry } from '@/lib/country-codes'
 import CountryPopup from './CountryPopup'
+import MapSearch from './MapSearch'
 
-const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
+// Hosted locally (committed to public/) so the map works offline and never
+// depends on a CDN. 50m resolution so microstates like Singapore, Malta and
+// Monaco exist as clickable shapes at all.
+const GEO_URL = '/geo/countries-50m.json'
+
+const INITIAL_POSITION = { coordinates: [15, 10], zoom: 1 }
+const MIN_ZOOM = 1
+const MAX_ZOOM = 24
+
+const HIGHLIGHT_FILL = '#F59E0B' // amber-500, deliberately outside the purple heat scale
+const HIGHLIGHT_STROKE = '#B45309' // amber-700
+
+function clampZoom(zoom) {
+  return Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom))
+}
+
+// Centroid + zoom that frame a country nicely. Uses the country's largest
+// polygon so overseas territories (France, US) don't wreck the framing.
+function framingForFeature(geoFeature) {
+  let target = geoFeature
+  if (geoFeature.geometry?.type === 'MultiPolygon') {
+    let best = null
+    let bestArea = -1
+    for (const coordinates of geoFeature.geometry.coordinates) {
+      const part = { type: 'Feature', geometry: { type: 'Polygon', coordinates } }
+      const area = geoArea(part)
+      if (area > bestArea) {
+        bestArea = area
+        best = part
+      }
+    }
+    if (best) target = best
+  }
+
+  const [[minLon, minLat], [maxLon, maxLat]] = geoBounds(target)
+  // Antimeridian-crossing bounds come back with minLon > maxLon
+  const lonSpan = minLon > maxLon ? 360 - minLon + maxLon : maxLon - minLon
+  const latSpan = maxLat - minLat
+  const zoom = clampZoom(0.3 * Math.min(360 / Math.max(lonSpan, 0.05), 180 / Math.max(latSpan, 0.05)))
+  return { coordinates: geoCentroid(target), zoom }
+}
 
 export default function MapView({ countriesData = [], maxVisitCount, onDataRefresh, isLoading }) {
+  const [position, setPosition] = useState(INITIAL_POSITION)
+  const [highlighted, setHighlighted] = useState(null) // country record from search
+  const [geoFeatures, setGeoFeatures] = useState(null)
   const [popupData, setPopupData] = useState({
     isOpen: false,
     countryName: '',
@@ -15,120 +63,77 @@ export default function MapView({ countriesData = [], maxVisitCount, onDataRefre
     restaurants: []
   })
 
-  const handleGeographyClick = async (geo) => {
-    const countryName = geo.properties.NAME || geo.properties.name
-    
-    if (!countryName) return
-    
+  // Load the topojson once and convert to GeoJSON features; also reused for
+  // search zoom-to framing.
+  useEffect(() => {
+    let cancelled = false
+    fetch(GEO_URL)
+      .then(res => res.json())
+      .then(topology => {
+        if (cancelled) return
+        setGeoFeatures(topoFeature(topology, topology.objects.countries).features)
+      })
+      .catch(error => console.error('Failed to load map data:', error))
+    return () => { cancelled = true }
+  }, [])
+
+  const countryNameIndex = useMemo(() => buildCountryNameIndex(countriesData), [countriesData])
+
+  const openCountryPopup = async (geoName, country) => {
     try {
-      console.log(`🗺️ Clicked on country: ${countryName}`)
-      
-      // Name-based mapping for major countries (since geo data only has country names)
-      const nameToCode3 = {
-        'France': 'FRA', 'India': 'IND', 'Italy': 'ITA', 'Japan': 'JPN', 'Mexico': 'MEX', 'Thailand': 'THA',
-        'United States of America': 'US', 'United States': 'US', 'China': 'CN', 'Germany': 'DE', 
-        'Brazil': 'BR', 'United Kingdom': 'GB', 'Canada': 'CA', 'Australia': 'AU', 'Russia': 'RU',
-        'Argentina': 'AR', 'Chile': 'CL', 'Peru': 'PE', 'Colombia': 'CO', 'Venezuela': 'VE',
-        'Spain': 'ES', 'Portugal': 'PT', 'Netherlands': 'NL', 'Belgium': 'BE', 'Switzerland': 'CH',
-        'Austria': 'AT', 'Sweden': 'SE', 'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI',
-        'Poland': 'PL', 'Czech Republic': 'CZ', 'Hungary': 'HU', 'Romania': 'RO', 'Ukraine': 'UA',
-        'Turkey': 'TR', 'Greece': 'GR', 'Bulgaria': 'BG', 'Serbia': 'RS', 'Croatia': 'HR',
-        'South Africa': 'ZA', 'Egypt': 'EG', 'Nigeria': 'NG', 'Kenya': 'KE', 'Ethiopia': 'ET',
-        'Morocco': 'MA', 'Algeria': 'DZ', 'Libya': 'LY', 'Sudan': 'SD', 'Tunisia': 'TN',
-        'South Korea': 'KR', 'North Korea': 'KP', 'Mongolia': 'MN', 'Kazakhstan': 'KZ', 
-        'Iran': 'IR', 'Iraq': 'IQ', 'Saudi Arabia': 'SA', 'Palestine': 'PS', 'Jordan': 'JO',
-        'Indonesia': 'ID', 'Malaysia': 'MY', 'Philippines': 'PH', 'Vietnam': 'VN', 'Myanmar': 'MM',
-        'Bangladesh': 'BD', 'Pakistan': 'PK', 'Afghanistan': 'AF', 'Sri Lanka': 'LK', 'Nepal': 'NP',
-        'New Zealand': 'NZ', 'Papua New Guinea': 'PG', 'Madagascar': 'MG', 'Tanzania': 'TZ',
-        'Mozambique': 'MZ', 'Zimbabwe': 'ZW', 'Botswana': 'BW', 'Namibia': 'NA', 'Zambia': 'ZM',
-        'Angola': 'AO', 'Democratic Republic of the Congo': 'CD', 'Republic of the Congo': 'CG',
-        'Central African Republic': 'CF', 'Chad': 'TD', 'Niger': 'NE', 'Mali': 'ML', 'Burkina Faso': 'BF',
-        'Senegal': 'SN', 'Guinea': 'GN', 'Sierra Leone': 'SL', 'Liberia': 'LR', 'Ivory Coast': 'CI',
-        'Ghana': 'GH', 'Togo': 'TG', 'Benin': 'BJ', 'Cameroon': 'CM', 'Equatorial Guinea': 'GQ',
-        'Gabon': 'GA', 'Uruguay': 'UY', 'Paraguay': 'PY', 'Bolivia': 'BO', 'Ecuador': 'EC',
-        'Guyana': 'GY', 'Suriname': 'SR', 'French Guiana': 'GF'
-      }
-      
-      // Find country code using name-based mapping
-      let countryCode = null
-      const mappedCode3 = nameToCode3[countryName]
-      
-      if (mappedCode3) {
-        countryCode = mappedCode3
-      } else {
-        // Fallback: try to find by similar name in countriesData
-        const countryData = countriesData.find(c => 
-          c.name.toLowerCase() === countryName.toLowerCase() ||
-          countryName.toLowerCase().includes(c.name.toLowerCase()) ||
-          c.name.toLowerCase().includes(countryName.toLowerCase())
-        )
-        if (countryData) {
-          countryCode = countryData.country_code
-        }
-      }
-      
-      console.log(`🔍 Found country code: ${countryCode} for ${countryName}`)
-      
-      if (!countryCode) {
-        console.warn(`⚠️ Could not find country code for: ${countryName}`)
-        return
-      }
-      
-      // Fetch full country details including restaurants
-      try {
-        console.log(`🔍 Fetching country details for code: ${countryCode}`)
-        const response = await fetch(`/api/country?code=${countryCode}`)
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch country details: ${response.status}`)
-        }
-        
-        const fullCountryData = await response.json()
-        console.log(`✅ Loaded country details:`, fullCountryData)
-        
-        // Open popup with full country data
-        setPopupData({
-          isOpen: true,
-          countryName,
-          countryData: fullCountryData,
-          restaurants: fullCountryData.restaurants || []
-        })
-        
-      } catch (error) {
-        console.error('❌ Error fetching country details:', error)
-        // Fallback: show basic popup without restaurants
-        setPopupData({
-          isOpen: true,
-          countryName,
-          countryData: { 
-            name: countryName, 
-            cuisine_style: 'Local', 
-            visit_count: 0,
-            id: null
-          },
-          restaurants: []
-        })
-      }
-      
+      const response = await fetch(`/api/country?code=${country.country_code}`)
+      if (!response.ok) throw new Error(`Failed to fetch country details: ${response.status}`)
+      const fullCountryData = await response.json()
+      setPopupData({
+        isOpen: true,
+        countryName: fullCountryData.name || geoName,
+        countryData: fullCountryData,
+        restaurants: fullCountryData.restaurants || []
+      })
     } catch (error) {
-      console.error('Error handling country click:', error)
+      console.error('Error fetching country details:', error)
+      setPopupData({
+        isOpen: true,
+        countryName: geoName,
+        countryData: { name: geoName, cuisine_style: 'Local', visit_count: 0, id: null },
+        restaurants: []
+      })
     }
   }
 
-  const closePopup = () => {
-    setPopupData({
-      isOpen: false,
-      countryName: '',
-      countryData: null,
-      restaurants: []
-    })
+  const handleGeographyClick = (geo) => {
+    const geoName = geo.properties.name
+    const country = matchGeoToCountry(geoName, countryNameIndex)
+    if (!country) {
+      console.warn(`No tracked country for map region: ${geoName}`)
+      return
+    }
+    openCountryPopup(geoName, country)
   }
 
-  // Handle data refresh from popup (when visits are added/edited/deleted).
-  // The popup already invalidated the shared queries; this just nudges the
-  // parent's aggregate refetch so map colors update.
-  const handleDataRefresh = () => {
-    onDataRefresh?.()
+  const closePopup = () => {
+    setPopupData({ isOpen: false, countryName: '', countryData: null, restaurants: [] })
+  }
+
+  const handleSearchSelect = (country) => {
+    setHighlighted(country)
+    const geoFeature = (geoFeatures || []).find(
+      f => matchGeoToCountry(f.properties.name, countryNameIndex)?.country_code === country.country_code
+    )
+    if (geoFeature) {
+      setPosition(framingForFeature(geoFeature))
+    }
+  }
+
+  const handleSearchClear = () => setHighlighted(null)
+
+  const zoomBy = (factor) => {
+    setPosition(pos => ({ ...pos, zoom: clampZoom(pos.zoom * factor) }))
+  }
+
+  const resetView = () => {
+    setPosition(INITIAL_POSITION)
+    setHighlighted(null)
   }
 
   if (isLoading) {
@@ -142,132 +147,102 @@ export default function MapView({ countriesData = [], maxVisitCount, onDataRefre
     )
   }
 
+  const strokeWidth = 0.5 / Math.sqrt(position.zoom)
+
   return (
     <>
       <div className="w-full h-full bg-blue-50 relative">
+        <MapSearch
+          countriesData={countriesData}
+          selectedCountry={highlighted}
+          onSelect={handleSearchSelect}
+          onClear={handleSearchClear}
+        />
+
+        {/* Zoom controls */}
+        <div className="absolute bottom-4 right-3 z-10 flex flex-col gap-1.5">
+          <button
+            onClick={() => zoomBy(1.6)}
+            className="w-9 h-9 rounded-lg bg-white/95 backdrop-blur-sm border shadow-md flex items-center justify-center text-gray-700 hover:bg-purple-50 active:bg-purple-100 transition-colors"
+            aria-label="Zoom in"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => zoomBy(1 / 1.6)}
+            className="w-9 h-9 rounded-lg bg-white/95 backdrop-blur-sm border shadow-md flex items-center justify-center text-gray-700 hover:bg-purple-50 active:bg-purple-100 transition-colors"
+            aria-label="Zoom out"
+          >
+            <Minus className="w-4 h-4" />
+          </button>
+          <button
+            onClick={resetView}
+            className="w-9 h-9 rounded-lg bg-white/95 backdrop-blur-sm border shadow-md flex items-center justify-center text-gray-700 hover:bg-purple-50 active:bg-purple-100 transition-colors"
+            aria-label="Reset view"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </button>
+        </div>
+
         <ComposableMap
           projection="geoMercator"
-          projectionConfig={{
-            scale: 120,
-            center: [0, 0]
-          }}
+          projectionConfig={{ scale: 120, center: [0, 0] }}
           width={800}
           height={600}
-          style={{ 
-            width: "100%", 
-            height: "100%", 
-            cursor: "pointer",
-            minHeight: "400px"
-          }}
+          style={{ width: '100%', height: '100%', cursor: 'pointer', minHeight: '400px' }}
         >
           <ZoomableGroup
-            maxZoom={4}
-            minZoom={1}
-            center={[0, 0]}
-            zoom={1}
+            center={position.coordinates}
+            zoom={position.zoom}
+            minZoom={MIN_ZOOM}
+            maxZoom={MAX_ZOOM}
+            onMoveEnd={({ coordinates, zoom }) => setPosition({ coordinates, zoom })}
           >
-            <Geographies geography={geoUrl}>
-              {({ geographies }) =>
-                geographies.map((geo, index) => {
-                  const countryName = geo.properties.NAME || geo.properties.name
-                  
-                  // Name-based mapping for finding country data - use comprehensive mapping
-                  const nameToCode3 = {
-                    'France': 'FRA', 'India': 'IND', 'Italy': 'ITA', 'Japan': 'JPN', 'Mexico': 'MEX', 'Thailand': 'THA',
-                    'United States of America': 'USA', 'United States': 'USA', 'China': 'CHN', 'Germany': 'DEU', 
-                    'Brazil': 'BRA', 'United Kingdom': 'GBR', 'Canada': 'CAN', 'Australia': 'AUS', 'Russia': 'RU',
-                    'Argentina': 'AR', 'Chile': 'CL', 'Peru': 'PE', 'Colombia': 'CO', 'Venezuela': 'VE',
-                    'Spain': 'ES', 'Portugal': 'PT', 'Netherlands': 'NL', 'Belgium': 'BE', 'Switzerland': 'CH',
-                    'Austria': 'AT', 'Sweden': 'SE', 'Norway': 'NO', 'Denmark': 'DK', 'Finland': 'FI',
-                    'Poland': 'PL', 'Czech Republic': 'CZ', 'Hungary': 'HU', 'Romania': 'RO', 'Ukraine': 'UA',
-                    'Turkey': 'TR', 'Greece': 'GR', 'Bulgaria': 'BG', 'Serbia': 'RS', 'Croatia': 'HR',
-                    'South Africa': 'ZA', 'Egypt': 'EG', 'Nigeria': 'NG', 'Kenya': 'KE', 'Ethiopia': 'ET',
-                    'Morocco': 'MA', 'Algeria': 'DZ', 'Libya': 'LY', 'Sudan': 'SD', 'Tunisia': 'TN',
-                    'South Korea': 'KR', 'North Korea': 'KP', 'Mongolia': 'MN', 'Kazakhstan': 'KZ', 
-                    'Iran': 'IR', 'Iraq': 'IQ', 'Saudi Arabia': 'SA', 'Palestine': 'PS', 'Jordan': 'JO',
-                    'Indonesia': 'ID', 'Malaysia': 'MY', 'Philippines': 'PH', 'Vietnam': 'VN', 'Myanmar': 'MM',
-                    'Bangladesh': 'BD', 'Pakistan': 'PK', 'Afghanistan': 'AF', 'Sri Lanka': 'LK', 'Nepal': 'NP',
-                    'New Zealand': 'NZ', 'Papua New Guinea': 'PG', 'Madagascar': 'MG', 'Tanzania': 'TZ',
-                    'Mozambique': 'MZ', 'Zimbabwe': 'ZW', 'Botswana': 'BW', 'Namibia': 'NA', 'Zambia': 'ZM',
-                    'Angola': 'AO', 'Democratic Republic of the Congo': 'CD', 'Republic of the Congo': 'CG',
-                    'Central African Republic': 'CF', 'Chad': 'TD', 'Niger': 'NE', 'Mali': 'ML', 'Burkina Faso': 'BF',
-                    'Senegal': 'SN', 'Guinea': 'GN', 'Sierra Leone': 'SL', 'Liberia': 'LR', 'Ivory Coast': 'CI',
-                    'Ghana': 'GH', 'Togo': 'TG', 'Benin': 'BJ', 'Cameroon': 'CM', 'Equatorial Guinea': 'GQ',
-                    'Gabon': 'GA', 'Uruguay': 'UY', 'Paraguay': 'PY', 'Bolivia': 'BO', 'Ecuador': 'EC',
-                    'Guyana': 'GY', 'Suriname': 'SR', 'French Guiana': 'GF'
-                  }
-                  
-                  // Try to find country data
-                  let countryData = null
-                  const mappedCode3 = nameToCode3[countryName]
-                  
-                  if (mappedCode3) {
-                    countryData = countriesData.find(c => c.country_code === mappedCode3)
-                  }
-                  
-                  // Fallback: try name matching
-                  if (!countryData) {
-                    countryData = countriesData.find(c => 
-                      c.name.toLowerCase() === countryName.toLowerCase() ||
-                      countryName.toLowerCase().includes(c.name.toLowerCase()) ||
-                      c.name.toLowerCase().includes(countryName.toLowerCase())
+            {geoFeatures && (
+              <Geographies geography={geoFeatures}>
+                {({ geographies }) =>
+                  geographies.map((geo) => {
+                    const country = matchGeoToCountry(geo.properties.name, countryNameIndex)
+                    const visitCount = country?.visit_count || 0
+                    const isHighlighted = !!highlighted && country?.country_code === highlighted.country_code
+                    const fillColor = isHighlighted
+                      ? HIGHLIGHT_FILL
+                      : colorForCount(visitCount, maxVisitCount)
+
+                    return (
+                      <Geography
+                        key={geo.rsmKey}
+                        geography={geo}
+                        fill={fillColor}
+                        stroke={isHighlighted ? HIGHLIGHT_STROKE : '#666'}
+                        strokeWidth={isHighlighted ? strokeWidth * 2 : strokeWidth}
+                        onClick={() => handleGeographyClick(geo)}
+                        style={{
+                          default: { outline: 'none', cursor: 'pointer' },
+                          hover: {
+                            fill: isHighlighted ? HIGHLIGHT_FILL : (visitCount > 0 ? '#7C3AED' : '#E9D5FF'),
+                            outline: 'none',
+                            cursor: 'pointer'
+                          },
+                          pressed: { fill: '#7C3AED', outline: 'none', cursor: 'pointer' }
+                        }}
+                      />
                     )
-                  }
-                  
-                  const visitCount = countryData?.visit_count || 0
-                  const fillColor = colorForCount(visitCount, maxVisitCount)
-                  
-                  // Debug log for countries with visits
-                  if (visitCount > 0) {
-                    console.log(`🎨 ${countryName}: ${visitCount} visits, Color: ${fillColor}`)
-                  }
-                  
-                  return (
-                    <Geography
-                      key={`${geo.rsmKey}-${index}`}
-                      geography={geo}
-                      fill={fillColor}
-                      stroke="#666"
-                      strokeWidth={0.5}
-                      onClick={() => handleGeographyClick(geo)}
-                      onMouseEnter={() => {
-                        // Optional: add hover effect
-                      }}
-                      style={{
-                        default: {
-                          outline: "none",
-                          cursor: "pointer",
-                          pointerEvents: "all"
-                        },
-                        hover: {
-                          fill: visitCount > 0 ? "#7C3AED" : "#E9D5FF",
-                          outline: "none",
-                          cursor: "pointer",
-                          pointerEvents: "all"
-                        },
-                        pressed: {
-                          fill: "#7C3AED",
-                          outline: "none",
-                          cursor: "pointer",
-                          pointerEvents: "all"
-                        },
-                      }}
-                    />
-                  )
-                })
-              }
-            </Geographies>
+                  })
+                }
+              </Geographies>
+            )}
           </ZoomableGroup>
         </ComposableMap>
       </div>
-      
+
       <CountryPopup
         isOpen={popupData.isOpen}
         onClose={closePopup}
         countryName={popupData.countryName}
         countryData={popupData.countryData}
         restaurants={popupData.restaurants}
-        onDataRefresh={handleDataRefresh}
+        onDataRefresh={onDataRefresh}
       />
     </>
   )
