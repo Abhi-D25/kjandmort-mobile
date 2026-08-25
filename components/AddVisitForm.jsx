@@ -44,6 +44,12 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const countryId = watch('country_id') || ''
   const fusionCountryId = watch('fusion_country_id') || ''
 
+  // Search autofill resolves the country before its cuisine-filtered option
+  // list has loaded; setting the Select value that early leaves the trigger
+  // label stuck on the placeholder. Park the id here and commit it once the
+  // matching option exists.
+  const [pendingCountryId, setPendingCountryId] = useState(null)
+
   // Query for cuisines list
   const { data: cuisines = [] } = useQuery({
     queryKey: ['cuisines'],
@@ -65,6 +71,14 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
     },
     enabled: !!selectedCuisine
   })
+
+  // Commit a parked autofill country once its option is available
+  useEffect(() => {
+    if (pendingCountryId && countries.some(c => c.id === pendingCountryId)) {
+      setValue('country_id', pendingCountryId, { shouldValidate: true })
+      setPendingCountryId(null)
+    }
+  }, [pendingCountryId, countries, setValue])
 
   // Query for fusion countries list (filtered by fusion cuisine)
   const { data: fusionCountries = [] } = useQuery({
@@ -111,9 +125,10 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
 
       if (matchingCountry) {
         // Use the matched country's own cuisine so the country dropdown
-        // (filtered by cuisine) is guaranteed to contain it.
+        // (filtered by cuisine) is guaranteed to contain it. The id is
+        // committed by the pendingCountryId effect once options load.
         setSelectedCuisine(matchingCountry.cuisine_style)
-        setValue('country_id', matchingCountry.id, { shouldValidate: true })
+        setPendingCountryId(matchingCountry.id)
         return
       }
     } catch (error) {
@@ -308,7 +323,12 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           disabled={!selectedCuisine}
         >
           <SelectTrigger className="h-8">
-            <SelectValue placeholder={selectedCuisine ? "Select country" : "Select cuisine first"} />
+            {/* Resolve the label ourselves: when a search autofill sets the
+                value before the country list finishes loading, Radix never
+                updates the trigger text on its own. */}
+            <SelectValue placeholder={selectedCuisine ? "Select country" : "Select cuisine first"}>
+              {countries.find(c => c.id === countryId)?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {countries.map((country) => (
@@ -403,7 +423,9 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
                 disabled={!selectedFusionCuisine}
               >
                 <SelectTrigger className="h-8">
-                  <SelectValue placeholder={selectedFusionCuisine ? "Select fusion country" : "Select fusion cuisine first"} />
+                  <SelectValue placeholder={selectedFusionCuisine ? "Select fusion country" : "Select fusion cuisine first"}>
+                    {fusionCountries.find(c => c.id === fusionCountryId)?.name}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {fusionCountries.map((country) => (
