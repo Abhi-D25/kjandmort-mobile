@@ -8,13 +8,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { MapPin, Calendar, Crown, Cat, Utensils, Plus, X, Edit, Trash2, Users } from 'lucide-react'
+import { MapPin, Calendar, Utensils, Plus, X, Edit, Trash2, Users } from 'lucide-react'
 import AddVisitForm from './AddVisitForm'
 import EditVisitModal from './EditVisitModal'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import { invalidateVisitData } from '@/lib/query-keys'
 import ItemsDisplay from './ItemsDisplay'
 import { hasItems } from '@/lib/items'
+import { formatVisitDate } from '@/lib/dates'
 
 export default function CountryDrawer({ countryCode, isOpen, onClose, highlightVisitId = null }) {
   const [showAddForm, setShowAddForm] = useState(false)
@@ -67,13 +68,6 @@ export default function CountryDrawer({ countryCode, isOpen, onClose, highlightV
     }
   }, [isOpen, highlightVisitId, restaurants.length])
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
 
   const handleAddVisitSuccess = () => {
     setShowAddForm(false)
@@ -163,7 +157,7 @@ export default function CountryDrawer({ countryCode, isOpen, onClose, highlightV
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                       <div className="flex items-center gap-2">
-                        <Users className="h-5 w-5 text-green-600" />
+                        <Users className="h-5 w-5 text-purple-600" />
                         <h3 className="font-semibold text-base md:text-lg">Restaurant Visits</h3>
                       </div>
                       <Button 
@@ -181,7 +175,7 @@ export default function CountryDrawer({ countryCode, isOpen, onClose, highlightV
                       <Card
                         key={visit.id}
                         ref={(node) => { cardRefs.current[visit.id] = node }}
-                        className={`border-l-4 border-l-purple-500 transition-shadow duration-500 ${
+                        className={`transition-shadow duration-500 ${
                           flashVisitId === visit.id ? 'ring-2 ring-amber-400 shadow-lg' : ''
                         }`}
                       >
@@ -197,7 +191,7 @@ export default function CountryDrawer({ countryCode, isOpen, onClose, highlightV
                             <div className="flex flex-col items-start sm:items-end gap-1">
                               <Badge variant="outline" className="text-xs">
                                 <Calendar className="w-3 h-3 mr-1" />
-                                {formatDate(visit.visit_date)}
+                                {formatVisitDate(visit.visit_date)}
                               </Badge>
                               {visit.is_fusion && (
                                 <Badge variant="secondary" className="text-xs">
@@ -211,7 +205,7 @@ export default function CountryDrawer({ countryCode, isOpen, onClose, highlightV
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleEdit(visit)}
-                                  className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                  className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                                   title="Edit visit"
                                 >
                                   <Edit className="h-4 w-4" />
@@ -279,7 +273,7 @@ export default function CountryDrawer({ countryCode, isOpen, onClose, highlightV
 
                 {/* Add Visit Form */}
                 {showAddForm && (
-                  <Card className="border-green-200 bg-green-50">
+                  <Card className="border-purple-200 bg-purple-50/60">
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-center">
                         <CardTitle className="text-base">Add New Visit</CardTitle>

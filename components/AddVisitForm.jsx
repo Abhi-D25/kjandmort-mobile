@@ -228,22 +228,19 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-3 max-h-[70vh] overflow-y-auto">
       {/* Restaurant Search Option */}
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <Button
           type="button"
           variant="outline"
           onClick={() => setShowSearch(true)}
-          className="w-full bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100 h-9 sm:h-10 text-sm"
+          className="w-full border-purple-200 text-purple-700 hover:bg-purple-50 hover:text-purple-800 h-9 sm:h-10 text-sm"
         >
           <Search className="w-4 h-4 mr-2" />
           <span className="hidden sm:inline">Search Restaurant on Google Maps</span>
           <span className="sm:hidden">Search Restaurants</span>
         </Button>
         <p className="text-xs text-gray-500 text-center">
-          Auto-fill restaurant details, cuisine, and location
-        </p>
-        <p className="text-xs text-blue-600 text-center font-medium">
-          ✨ New Feature: Search and auto-fill from Google Maps!
+          Auto-fills the restaurant, cuisine, and location
         </p>
       </div>
 
@@ -343,7 +340,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
 
       {/* Fusion Cuisine and Country Selection */}
       {isFusion && (
-        <Card className="border-orange-200 bg-orange-50 p-2">
+        <Card className="border-purple-200 bg-purple-50/60 p-2">
           <CardHeader className="pb-1">
             <CardTitle className="text-xs flex items-center gap-2">
               <Plus className="w-3 h-3" />
@@ -455,7 +452,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           <Star className="w-3 h-3 text-yellow-500" />
           Rating
         </Label>
-        <div className="p-3 border rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+        <div className="p-3 border rounded-lg border-gray-200 bg-white">
           <StarRating
             value={rating}
             onChange={setRating}

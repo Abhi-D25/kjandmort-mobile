@@ -271,7 +271,7 @@ export default function RestaurantSearch({ onRestaurantSelect, onCancel }) {
                               
                               {restaurant.country && (
                                 <div className="flex items-center gap-1">
-                                  <MapPin className="w-3 h-3 text-blue-500" />
+                                  <MapPin className="w-3 h-3 text-purple-500" />
                                   <span>{restaurant.country}</span>
                                 </div>
                               )}

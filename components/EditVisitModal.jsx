@@ -101,7 +101,7 @@ export default function EditVisitModal({
         throw new Error('Failed to update visit')
       }
 
-      const result = await response.json()
+      await response.json()
 
       toast({
         title: "Visit Updated! 🎉",
@@ -202,7 +202,7 @@ export default function EditVisitModal({
               <Star className="w-4 h-4 text-yellow-500" />
               Rating
             </Label>
-            <div className="p-4 border rounded-lg bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+            <div className="p-4 border rounded-lg border-gray-200 bg-white">
               <StarRating
                 value={formData.rating}
                 onChange={(value) => handleInputChange('rating', value)}

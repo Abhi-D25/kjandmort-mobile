@@ -13,6 +13,7 @@ import StarRating from '@/components/ui/star-rating'
 import { invalidateVisitData } from '@/lib/query-keys'
 import ItemsDisplay from './ItemsDisplay'
 import { hasItems } from '@/lib/items'
+import { formatVisitDate } from '@/lib/dates'
 
 export default function CountryPopup({ 
   isOpen, 
@@ -132,13 +133,13 @@ export default function CountryPopup({
             {/* Cuisine Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <Utensils className="h-5 w-5 text-orange-600" />
+                <Utensils className="h-5 w-5 text-purple-600" />
                 <h3 className="text-lg font-semibold">
                   {countryData?.cuisine_style || 'Local'} Cuisine
                 </h3>
               </div>
-              
-              <div className="bg-orange-50 p-3 md:p-4 rounded-lg border-l-4 border-orange-400">
+
+              <div className="bg-purple-50/70 p-3 md:p-4 rounded-lg border border-purple-100">
                 <p className="text-gray-700 leading-relaxed text-sm md:text-base">
                   {cuisineDescription}
                 </p>
@@ -177,7 +178,7 @@ export default function CountryPopup({
             {hasVisits && !restaurantsLoading && !error && (
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600" />
+                  <Users className="h-5 w-5 text-purple-600" />
                   <h3 className="text-lg font-semibold">Restaurant Visits</h3>
                 </div>
                 
@@ -194,7 +195,7 @@ export default function CountryPopup({
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                           <div className="flex items-center gap-1 text-xs md:text-sm text-gray-500">
                             <Calendar className="h-3 w-3 md:h-4 md:w-4" />
-                            {restaurant.visit_date ? new Date(restaurant.visit_date).toLocaleDateString() : 'Date unknown'}
+                            {formatVisitDate(restaurant.visit_date)}
                           </div>
                           
                           {/* Edit/Delete Buttons */}
@@ -203,7 +204,7 @@ export default function CountryPopup({
                               size="sm"
                               variant="ghost"
                               onClick={() => handleEdit(restaurant)}
-                              className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              className="h-8 w-8 p-0 text-purple-600 hover:text-purple-700 hover:bg-purple-50"
                               title="Edit visit"
                             >
                               <Edit className="h-4 w-4" />
@@ -287,9 +288,9 @@ export default function CountryPopup({
 
             {/* Add Visit Form */}
             {showAddForm && (
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="bg-purple-50/60 p-4 rounded-lg border border-purple-200">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="text-lg font-semibold text-green-800">Add New Visit</h3>
+                  <h3 className="text-lg font-semibold text-purple-900">Add New Visit</h3>
                   <Button 
                     variant="ghost" 
                     size="sm" 
