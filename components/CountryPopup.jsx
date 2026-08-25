@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
@@ -9,8 +9,8 @@ import { MapPin, Calendar, Users, X, Utensils, Edit, Trash2, AlertCircle, Refres
 import EditVisitModal from './EditVisitModal'
 import DeleteConfirmModal from './DeleteConfirmModal'
 import AddVisitForm from './AddVisitForm'
-import { toast } from '@/hooks/use-toast'
 import StarRating from '@/components/ui/star-rating'
+import { invalidateVisitData } from '@/lib/query-keys'
 
 export default function CountryPopup({ 
   isOpen, 
@@ -23,78 +23,38 @@ export default function CountryPopup({
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState(null)
-  const [countries, setCountries] = useState([])
-  const [restaurants, setRestaurants] = useState(initialRestaurants)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
   const [showAddForm, setShowAddForm] = useState(false)
   const queryClient = useQueryClient()
 
-  // Use React Query for restaurants data - but prefer the restaurants passed from MapView
-  const { data: restaurantsData, isLoading: restaurantsLoading, refetch: refetchRestaurants } = useQuery({
-    queryKey: ['restaurants', countryData?.id],
+  // Restaurants for this country. The ['country', ...] prefix means the
+  // shared invalidation in lib/query-keys.js refreshes this too.
+  const { data: restaurantsData, isLoading: restaurantsLoading, error, refetch: refetchRestaurants } = useQuery({
+    queryKey: ['country', countryData?.country_code, 'restaurants'],
     queryFn: async () => {
-      if (!countryData?.id) return []
-      
-      console.log(`🔍 Loading restaurants for country: ${countryName} (ID: ${countryData.id})`)
-      
-      // Use the new country endpoint that includes both primary and fusion restaurants
       const response = await fetch(`/api/country?code=${countryData.country_code}`)
-      
       if (!response.ok) {
-        const errorText = await response.text()
-        console.error(`❌ Country API Error (${response.status}):`, errorText)
         throw new Error(`Failed to load country data: ${response.status} ${response.statusText}`)
       }
-
       const fetchedData = await response.json()
-      console.log(`✅ Loaded country data with ${fetchedData.restaurants?.length || 0} restaurants`)
-
       return fetchedData.restaurants || []
     },
-    enabled: !!isOpen && !!countryData?.id && !initialRestaurants?.length, // Only fetch if no initial restaurants provided
-    staleTime: 0, // Always consider data stale
-    cacheTime: 0 // Don't cache at all
+    enabled: !!isOpen && !!countryData?.country_code,
+    // MapView already fetched this list when opening the popup
+    initialData: initialRestaurants?.length ? initialRestaurants : undefined
   })
+  const restaurants = restaurantsData ?? initialRestaurants ?? []
 
-  // Update local restaurants state when React Query data changes
-  useEffect(() => {
-    if (restaurantsData) {
-      setRestaurants(restaurantsData)
-    }
-  }, [restaurantsData])
-
-  // Use initial restaurants if provided (from MapView) - these include both primary and fusion restaurants
-  useEffect(() => {
-    if (initialRestaurants && initialRestaurants.length > 0) {
-      console.log(`✅ Using ${initialRestaurants.length} restaurants from MapView (includes fusion restaurants)`)
-      setRestaurants(initialRestaurants)
-    }
-  }, [initialRestaurants])
-
-  // Load countries for edit form
-  useEffect(() => {
-    const loadCountries = async () => {
-      if (!isOpen) return
-
-      try {
-        console.log('🔍 Loading countries for edit form...')
-        const response = await fetch('/api/countries')
-        
-        if (response.ok) {
-          const data = await response.json()
-          console.log(`✅ Loaded ${data.length} countries for dropdown`)
-          setCountries(data)
-        } else {
-          console.error('❌ Failed to load countries for dropdown')
-        }
-      } catch (error) {
-        console.error('❌ Error loading countries:', error)
-      }
-    }
-
-    loadCountries()
-  }, [isOpen])
+  // Full country list for the edit modal's country dropdowns
+  const { data: countries = [] } = useQuery({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      const response = await fetch('/api/countries')
+      if (!response.ok) throw new Error('Failed to fetch countries')
+      return response.json()
+    },
+    enabled: !!isOpen,
+    staleTime: 5 * 60 * 1000
+  })
 
   const handleEdit = (visit) => {
     console.log('✏️ Opening edit modal for visit:', visit)
@@ -109,85 +69,27 @@ export default function CountryPopup({
   }
 
   const handleVisitUpdated = () => {
-    console.log('✅ Visit updated, clearing all caches...')
     setEditModalOpen(false)
     setSelectedVisit(null)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Force a delay and then refetch restaurants
-    setTimeout(() => {
-      console.log('🔄 Refetching restaurants after update...')
-      refetchRestaurants()
-    }, 100)
-    
-    // Trigger parent component to refresh data (map colors, stats)
-    if (onDataRefresh) {
-      onDataRefresh()
-    }
+    invalidateVisitData(queryClient)
+    onDataRefresh?.()
   }
 
   const handleVisitDeleted = () => {
-    console.log('✅ Visit deleted, clearing all caches...')
     setDeleteModalOpen(false)
     setSelectedVisit(null)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Force a delay and then refetch restaurants
-    setTimeout(() => {
-      console.log('🔄 Refetching restaurants after delete...')
-      refetchRestaurants()
-    }, 100)
-    
-    // Trigger parent component to refresh data (map colors, stats)
-    if (onDataRefresh) {
-      onDataRefresh()
-    }
+    invalidateVisitData(queryClient)
+    onDataRefresh?.()
   }
 
   const retryLoading = () => {
-    if (countryData?.id) {
-      const loadRestaurants = async () => {
-        setLoading(true)
-        setError(null)
-        try {
-          const response = await fetch(`/api/restaurants?country_id=${countryData.id}`)
-          if (response.ok) {
-            const data = await response.json()
-            setRestaurants(data || [])
-          } else {
-            throw new Error(`Failed to load: ${response.status}`)
-          }
-        } catch (error) {
-          setError(error.message)
-        } finally {
-          setLoading(false)
-        }
-      }
-      loadRestaurants()
-    }
+    refetchRestaurants()
   }
 
   const handleAddVisitSuccess = () => {
-    console.log('✅ Visit added, clearing all caches...')
     setShowAddForm(false)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Force a delay and then refetch restaurants
-    setTimeout(() => {
-      console.log('🔄 Refetching restaurants after add...')
-      refetchRestaurants()
-    }, 100)
-    
-    // Trigger parent component to refresh data (map colors, stats)
-    if (onDataRefresh) {
-      onDataRefresh()
-    }
+    invalidateVisitData(queryClient)
+    onDataRefresh?.()
   }
 
   if (!isOpen || !countryName) return null
@@ -256,7 +158,7 @@ export default function CountryPopup({
                   <AlertCircle className="h-5 w-5" />
                   <span className="font-medium">Failed to load restaurant visits</span>
                 </div>
-                <p className="text-red-600 text-sm mb-3">{error}</p>
+                <p className="text-red-600 text-sm mb-3">{error.message}</p>
                 <Button 
                   onClick={retryLoading}
                   size="sm"

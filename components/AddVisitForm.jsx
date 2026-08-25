@@ -17,6 +17,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Crown, Cat, ChefHat, MapPin, Plus, Search, Star } from 'lucide-react'
 import RestaurantSearch from './RestaurantSearch'
 import StarRating from '@/components/ui/star-rating'
+import { toast } from '@/hooks/use-toast'
 
 export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId = null, prefilledCuisine = null }) {
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -31,6 +32,16 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   const { register, handleSubmit, watch, setValue, reset, formState: { errors } } = useForm()
   const queryClient = useQueryClient()
 
+  // The country selects are non-native components, so register their fields
+  // explicitly and drive them from form state (makes prefills visible and
+  // lets reset() clear them).
+  useEffect(() => {
+    register('country_id', { required: true })
+    register('fusion_country_id')
+  }, [register])
+  const countryId = watch('country_id') || ''
+  const fusionCountryId = watch('fusion_country_id') || ''
+
   // Query for cuisines list
   const { data: cuisines = [] } = useQuery({
     queryKey: ['cuisines'],
@@ -42,7 +53,7 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   })
 
   // Query for countries list (filtered by cuisine)
-  const { data: countries = [], refetch: refetchCountries } = useQuery({
+  const { data: countries = [] } = useQuery({
     queryKey: ['countries', selectedCuisine],
     queryFn: async () => {
       const url = selectedCuisine ? `/api/countries?cuisine=${selectedCuisine}` : '/api/countries'
@@ -72,29 +83,41 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
   }
 
   // Handle restaurant search selection
-  const handleRestaurantSearchSelect = (restaurantData) => {
+  const handleRestaurantSearchSelect = async (restaurantData) => {
     // Auto-fill form fields based on search results
     setValue('restaurant_name', restaurantData.restaurant_name)
     setValue('location', restaurantData.location)
-    
-    // Set cuisine and trigger country fetch
-    setSelectedCuisine(restaurantData.cuisine_type)
-    
-    // Try to auto-select country if available
-    if (restaurantData.country_code && countries.length > 0) {
-      // Find country by country code or name
-      const matchingCountry = countries.find(c => 
-        c.country_code === restaurantData.country_code || 
-        c.name === restaurantData.country
-      )
-      
-      if (matchingCountry) {
-        setValue('country_id', matchingCountry.id)
-      }
-    }
-    
-    // Close search view
     setShowSearch(false)
+
+    // Resolve the country against the full country list. The cuisine-filtered
+    // `countries` query hasn't loaded yet at this point, so fetch directly.
+    try {
+      const allCountries = await queryClient.fetchQuery({
+        queryKey: ['countries'],
+        queryFn: async () => {
+          const response = await fetch('/api/countries')
+          if (!response.ok) throw new Error('Failed to fetch countries')
+          return response.json()
+        },
+        staleTime: 5 * 60 * 1000
+      })
+      const code = (restaurantData.country_code || '').toUpperCase()
+      const name = (restaurantData.country || '').toLowerCase()
+      const matchingCountry =
+        allCountries.find(c => c.country_code?.toUpperCase() === code) ||
+        allCountries.find(c => c.name.toLowerCase() === name)
+
+      if (matchingCountry) {
+        // Use the matched country's own cuisine so the country dropdown
+        // (filtered by cuisine) is guaranteed to contain it.
+        setSelectedCuisine(matchingCountry.cuisine_style)
+        setValue('country_id', matchingCountry.id, { shouldValidate: true })
+        return
+      }
+    } catch (error) {
+      console.error('Could not resolve country from search result:', error)
+    }
+    setSelectedCuisine(restaurantData.cuisine_type || '')
   }
 
   // Handle fusion cuisine change
@@ -152,11 +175,8 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       }
 
       const result = await response.json()
-      
-      // Clear all caches completely
-      queryClient.clear()
-      
-      // Reset form and call success callback
+
+      // Reset form and call success callback (the caller invalidates queries)
       reset()
       setIsFusion(false)
       setSelectedCuisine('')
@@ -167,7 +187,11 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
       onSuccess?.(result)
     } catch (error) {
       console.error('Error adding visit:', error)
-      alert('Failed to add visit: ' + error.message)
+      toast({
+        title: 'Failed to add visit',
+        description: error.message,
+        variant: 'destructive'
+      })
     } finally {
       setIsSubmitting(false)
     }
@@ -277,8 +301,9 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
           <MapPin className="w-3 h-3" />
           Country *
         </Label>
-        <Select 
-          onValueChange={(value) => setValue('country_id', value)}
+        <Select
+          value={countryId}
+          onValueChange={(value) => setValue('country_id', value, { shouldValidate: true })}
           disabled={!selectedCuisine}
         >
           <SelectTrigger className="h-8">
@@ -371,7 +396,8 @@ export default function AddVisitForm({ onSuccess, onCancel, prefilledCountryId =
             {/* Fusion Country Selection */}
             <div className="space-y-1">
               <Label htmlFor="fusion_country_id" className="text-xs">Fusion Country *</Label>
-              <Select 
+              <Select
+                value={fusionCountryId}
                 onValueChange={(value) => setValue('fusion_country_id', value)}
                 disabled={!selectedFusionCuisine}
               >

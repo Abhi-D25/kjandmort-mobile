@@ -31,16 +31,10 @@ const withPWA = require('next-pwa')({
       },
     },
     {
+      // Never serve stale API data — visit data must always be live.
       urlPattern: /\/api\/.*/i,
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'api-cache',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 60 * 60, // 1 hour
-        },
-        networkTimeoutSeconds: 10,
-      },
+      handler: 'NetworkOnly',
+      options: {},
     },
   ],
 });
@@ -49,9 +43,6 @@ const nextConfig = {
   output: 'standalone',
   images: {
     unoptimized: true,
-  },
-  experimental: {
-    serverComponentsExternalPackages: ['mongodb'],
   },
   webpack(config, { dev }) {
     if (dev) {

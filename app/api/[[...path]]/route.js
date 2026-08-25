@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, getCuisines, addRestaurantVisit, updateRestaurantVisit, deleteRestaurantVisit } from '../../../lib/supabase.js'
+import { supabase, getCountriesAggregate, getCountryDetails, getAllCountries, getCuisines, addRestaurantVisit } from '../../../lib/supabase.js'
 
 // Helper function to handle CORS
 function handleCORS(response) {
@@ -136,70 +136,8 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(result))
     }
 
-    // PUT /api/visit/:id - Update an existing restaurant visit
-    if (route.startsWith('/visit/') && method === 'PUT') {
-      const visitId = path[1] // Extract ID from path
-      
-      if (!visitId) {
-        return handleCORS(NextResponse.json(
-          { error: "Visit ID is required" }, 
-          { status: 400 }
-        ))
-      }
-
-      const body = await request.json()
-      
-      // Validate required fields
-      const { 
-        country_id, 
-        restaurant_name, 
-        location, 
-        items_devoured, 
-        king_julien_favorite, 
-        mort_favorite, 
-        is_fusion, 
-        fusion_country_id,
-        visit_date
-      } = body
-
-      if (!country_id || !restaurant_name || !location) {
-        return handleCORS(NextResponse.json(
-          { error: "Missing required fields: country_id, restaurant_name, location" }, 
-          { status: 400 }
-        ))
-      }
-
-      // Prepare visit data
-      const visitData = {
-        country_id,
-        restaurant_name,
-        location,
-        items_devoured: items_devoured || '',
-        king_julien_favorite: king_julien_favorite || null,
-        mort_favorite: mort_favorite || null,
-        is_fusion: is_fusion || false,
-        fusion_country_id: fusion_country_id || null,
-        visit_date: visit_date || new Date().toISOString().split('T')[0]
-      }
-
-      const result = await updateRestaurantVisit(visitId, visitData)
-      return handleCORS(NextResponse.json(result))
-    }
-
-    // DELETE /api/visit/:id - Delete a restaurant visit
-    if (route.startsWith('/visit/') && method === 'DELETE') {
-      const visitId = path[1] // Extract ID from path
-      
-      if (!visitId) {
-        return handleCORS(NextResponse.json(
-          { error: "Visit ID is required" }, 
-          { status: 400 }
-        ))
-      }
-
-      const result = await deleteRestaurantVisit(visitId)
-      return handleCORS(NextResponse.json(result))
-    }
+    // PUT/DELETE /api/visit/:id are handled by app/api/visit/[id]/route.js
+    // (the more specific route wins over this catch-all).
 
     // Route not found
     return handleCORS(NextResponse.json(

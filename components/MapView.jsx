@@ -1,21 +1,19 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useState } from 'react'
 import { ComposableMap, Geographies, Geography, ZoomableGroup } from 'react-simple-maps'
 import { colorForCount } from '@/lib/color'
 import CountryPopup from './CountryPopup'
 
 const geoUrl = "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
 
-export default function MapView({ countriesData = [], maxVisitCount, onCountryClick, onDataRefresh, isLoading }) {
+export default function MapView({ countriesData = [], maxVisitCount, onDataRefresh, isLoading }) {
   const [popupData, setPopupData] = useState({
     isOpen: false,
     countryName: '',
     countryData: null,
     restaurants: []
   })
-  const queryClient = useQueryClient()
 
   const handleGeographyClick = async (geo) => {
     const countryName = geo.properties.NAME || geo.properties.name
@@ -126,14 +124,11 @@ export default function MapView({ countriesData = [], maxVisitCount, onCountryCl
     })
   }
 
-  // Handle data refresh from popup (when visits are added/edited/deleted)
+  // Handle data refresh from popup (when visits are added/edited/deleted).
+  // The popup already invalidated the shared queries; this just nudges the
+  // parent's aggregate refetch so map colors update.
   const handleDataRefresh = () => {
-    console.log('🔄 Data refresh requested from popup - clearing all caches')
-    // Clear all caches completely
-    queryClient.clear()
-    if (onDataRefresh) {
-      onDataRefresh() // This should trigger parent to reload countries data
-    }
+    onDataRefresh?.()
   }
 
   if (isLoading) {

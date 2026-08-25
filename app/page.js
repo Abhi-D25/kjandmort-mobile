@@ -1,14 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useQuery, useQueryClient, QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
-import { Globe, Map, List, Plus, MapPin, Crown, Cat, Menu, X, Search, X as XIcon } from 'lucide-react'
+import { Map, List, Plus, MapPin, Crown, Cat, Menu, X, Search, X as XIcon } from 'lucide-react'
 import LandingPage from '@/components/LandingPage'
 import MapView from '@/components/MapView'
 import AddVisitForm from '@/components/AddVisitForm'
@@ -16,132 +16,45 @@ import CountryDrawer from '@/components/CountryDrawer'
 import Legend from '@/components/Legend'
 import InstallPrompt from '@/components/InstallPrompt'
 import { useIsMobile } from '@/hooks/use-mobile'
+import { invalidateVisitData } from '@/lib/query-keys'
 
 const queryClient = new QueryClient()
 
 function CuisineApp() {
   const [currentView, setCurrentView] = useState('landing')
   const [selectedCountry, setSelectedCountry] = useState(null)
-  const [selectedCountryVisitCount, setSelectedCountryVisitCount] = useState(0)
   const [showAddForm, setShowAddForm] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
-  const [dataVersion, setDataVersion] = useState(0) // Force re-renders when data changes
   const [searchTerm, setSearchTerm] = useState('') // Search term for country filtering
   const isMobile = useIsMobile()
   const queryClient = useQueryClient()
 
   // Query for countries data
-  const { 
-    data: countriesData = [], 
-    isLoading: countriesLoading, 
-    refetch: refetchCountries 
+  const {
+    data: countriesData = [],
+    isLoading: countriesLoading,
+    refetch: refetchCountries
   } = useQuery({
-    queryKey: ['countries-aggregate', dataVersion], // Include dataVersion to force cache busting
+    queryKey: ['countries-aggregate'],
     queryFn: async () => {
-      console.log('🔄 Fetching fresh countries data...')
       const response = await fetch('/api/aggregate')
       if (!response.ok) throw new Error('Failed to fetch countries')
-      const data = await response.json()
-      console.log('🔄 Fetched countries data:', data)
-      return data
+      return response.json()
     },
     refetchOnWindowFocus: false,
-    staleTime: 0, // Always consider data stale to ensure fresh updates
-    cacheTime: 0 // Don't cache at all
+    staleTime: 30_000
   })
 
   // Get max visit count for color scaling
   const maxVisitCount = Math.max(...countriesData.map(c => c.visit_count || 0), 1)
 
-  const handleCountryClick = (countryCode, visitCount = 0) => {
+  const handleCountryItemClick = (countryCode) => {
     setSelectedCountry(countryCode)
-    setSelectedCountryVisitCount(visitCount)
-  }
-
-  const handleCountryItemClick = (countryCode, visitCount = 0) => {
-    // For list view - only show restaurants if visits > 0, otherwise show add form option
-    setSelectedCountry(countryCode)
-    setSelectedCountryVisitCount(visitCount)
-  }
-
-  const handleSwitchToMap = () => {
-    setCurrentView('map')
-  }
-
-  const handleSwitchToList = () => {
-    setCurrentView('list')
   }
 
   const handleAddVisitSuccess = () => {
-    console.log('✅ Handling add visit success - clearing all caches...')
     setShowAddForm(false)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Increment data version to force re-renders
-    setDataVersion(prev => prev + 1)
-    
-    // Force refetch countries data
-    refetchCountries()
-  }
-
-  const handleCountryDrawerAddVisit = () => {
-    console.log('➕ Handling add visit - clearing all caches...')
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Increment data version to force re-renders
-    setDataVersion(prev => prev + 1)
-    
-    // Force refetch countries data to update list view
-    refetchCountries()
-    
-    // Close the drawer to refresh the list view
-    setSelectedCountry(null)
-  }
-
-  const handleCountryDrawerDeleteVisit = () => {
-    console.log('🗑️ Handling delete visit - clearing all caches...')
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Increment data version to force re-renders
-    setDataVersion(prev => prev + 1)
-    
-    // Force refetch countries data to update list view
-    refetchCountries()
-    
-    // Close the drawer to refresh the list view
-    setSelectedCountry(null)
-    
-    // Switch to list view to show the updated data immediately
-    setCurrentView('list')
-    
-    // Force a complete re-render after a short delay
-    setTimeout(() => {
-      console.log('🔄 Forcing complete re-render after delete...')
-      setDataVersion(prev => prev + 1)
-      refetchCountries()
-    }, 200)
-  }
-
-  const handleCountryDrawerEditVisit = () => {
-    console.log('✏️ Handling edit visit - clearing all caches...')
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Increment data version to force re-renders
-    setDataVersion(prev => prev + 1)
-    
-    // Force refetch countries data to update list view
-    refetchCountries()
-    
-    // Close the drawer to refresh the list view
-    setSelectedCountry(null)
+    invalidateVisitData(queryClient)
   }
 
   // Filter countries based on search term
@@ -177,7 +90,7 @@ function CuisineApp() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2" key={`header-stats-${dataVersion}-${visitedCountries}-${totalVisits}`}>
+                <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="px-2 py-1 text-xs">
                     <MapPin className="w-3 h-3 mr-1" />
                     <span className="hidden sm:inline">{visitedCountries} countries</span>
@@ -262,7 +175,7 @@ function CuisineApp() {
                 </div>
 
                 {/* Stats */}
-                <div className="space-y-2" key={`mobile-stats-${dataVersion}-${visitedCountries}-${totalVisits}`}>
+                <div className="space-y-2">
                   <h3 className="font-medium">Tour Statistics</h3>
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -334,7 +247,7 @@ function CuisineApp() {
                 <Legend maxCount={maxVisitCount} />
 
                 {/* Stats */}
-                <Card key={`stats-${dataVersion}-${visitedCountries}-${totalVisits}`}>
+                <Card>
                   <CardHeader>
                     <CardTitle className="text-lg">Tour Statistics</CardTitle>
                   </CardHeader>
@@ -363,13 +276,12 @@ function CuisineApp() {
                       <MapView 
                         countriesData={countriesData}
                         maxVisitCount={maxVisitCount}
-                        onCountryClick={handleCountryClick}
                         onDataRefresh={refetchCountries}
                         isLoading={countriesLoading}
                       />
                     )}
                     {currentView === 'list' && (
-                      <div className="p-6 h-full overflow-y-auto" key={`list-${dataVersion}-${countriesData.length}-${totalVisits}`}>
+                      <div className="p-6 h-full overflow-y-auto">
                         <h3 className="text-lg font-semibold mb-4">All Countries</h3>
                         
                         {/* Search Bar */}
@@ -460,16 +372,15 @@ function CuisineApp() {
               <Card className="h-[70vh] overflow-hidden">
                 <CardContent className="p-0 h-full">
                   {currentView === 'map' && (
-                    <MapView 
+                    <MapView
                       countriesData={countriesData}
                       maxVisitCount={maxVisitCount}
-                      onCountryClick={handleCountryClick}
                       onDataRefresh={refetchCountries}
                       isLoading={countriesLoading}
                     />
                   )}
                   {currentView === 'list' && (
-                    <div className="p-4 h-full overflow-y-auto" key={`mobile-list-${dataVersion}-${countriesData.length}-${totalVisits}`}>
+                    <div className="p-4 h-full overflow-y-auto">
                       <h3 className="text-lg font-semibold mb-4">All Countries</h3>
                       
                       {/* Mobile Search Bar */}
@@ -525,15 +436,10 @@ function CuisineApp() {
       )}
 
       {/* Country Details Drawer */}
-      <CountryDrawer 
-        key={`drawer-${dataVersion}-${selectedCountry}`}
+      <CountryDrawer
         countryCode={selectedCountry}
-        visitCount={selectedCountryVisitCount}
         isOpen={!!selectedCountry}
         onClose={() => setSelectedCountry(null)}
-        onAddVisit={handleCountryDrawerAddVisit}
-        onDeleteVisit={handleCountryDrawerDeleteVisit}
-        onEditVisit={handleCountryDrawerEditVisit}
       />
 
       {/* PWA Install Prompt */}

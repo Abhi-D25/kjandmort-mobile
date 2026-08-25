@@ -12,29 +12,39 @@ import { MapPin, Calendar, Crown, Cat, Utensils, Plus, X, Edit, Trash2, Users } 
 import AddVisitForm from './AddVisitForm'
 import EditVisitModal from './EditVisitModal'
 import DeleteConfirmModal from './DeleteConfirmModal'
+import { invalidateVisitData } from '@/lib/query-keys'
 
-export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose, onAddVisit, onDeleteVisit, onEditVisit }) {
+export default function CountryDrawer({ countryCode, isOpen, onClose }) {
   const [showAddForm, setShowAddForm] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false)
   const [selectedVisit, setSelectedVisit] = useState(null)
   const queryClient = useQueryClient()
 
-  const { data: countryData, isLoading, refetch: refetchCountryData } = useQuery({
+  const { data: countryData, isLoading } = useQuery({
     queryKey: ['country', countryCode],
     queryFn: async () => {
       if (!countryCode) return null
-      console.log('🔄 Fetching fresh country data for:', countryCode)
       const response = await fetch(`/api/country?code=${countryCode}`)
       if (!response.ok) throw new Error('Failed to fetch country data')
-      const data = await response.json()
-      console.log('🔄 Fetched country data:', data)
-      return data
+      return response.json()
     },
-    enabled: !!countryCode && isOpen,
-    staleTime: 0, // Always consider data stale
-    cacheTime: 0 // Don't cache at all
+    enabled: !!countryCode && isOpen
   })
+
+  // Full country list for the edit modal's country dropdowns
+  const { data: countries = [] } = useQuery({
+    queryKey: ['countries'],
+    queryFn: async () => {
+      const response = await fetch('/api/countries')
+      if (!response.ok) throw new Error('Failed to fetch countries')
+      return response.json()
+    },
+    enabled: isOpen,
+    staleTime: 5 * 60 * 1000
+  })
+
+  const restaurants = countryData?.restaurants ?? []
 
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -44,20 +54,11 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
     })
   }
 
-  const handleAddVisitSuccess = (result) => {
-    console.log('✅ Add visit success, clearing all caches...')
+  const handleAddVisitSuccess = () => {
     setShowAddForm(false)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Refetch the current country data to update the drawer
-    if (countryCode) {
-      refetchCountryData()
-    }
-    
-    onAddVisit?.(result)
-    onClose()
+    // Refresh drawer contents, aggregate counts, and search index in place —
+    // the drawer stays open so the new visit is immediately visible.
+    invalidateVisitData(queryClient)
   }
 
   const handleEdit = (visit) => {
@@ -73,44 +74,15 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
   }
 
   const handleVisitUpdated = () => {
-    console.log('✅ Visit updated, clearing all caches...')
     setEditModalOpen(false)
     setSelectedVisit(null)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Refetch the current country data to update the drawer
-    if (countryCode) {
-      refetchCountryData()
-    }
-    
-    // Trigger parent component to refresh data (map colors, stats)
-    if (onEditVisit) {
-      onEditVisit()
-    }
+    invalidateVisitData(queryClient)
   }
 
   const handleVisitDeleted = () => {
-    console.log('✅ Visit deleted, clearing all caches...')
     setDeleteModalOpen(false)
     setSelectedVisit(null)
-    
-    // Clear all caches completely
-    queryClient.clear()
-    
-    // Force a delay and then refetch to ensure the database has updated
-    setTimeout(() => {
-      console.log('🔄 Refetching country data after delete...')
-      if (countryCode) {
-        refetchCountryData()
-      }
-    }, 100)
-    
-    // Trigger parent component to refresh data (map colors, stats)
-    if (onDeleteVisit) {
-      onDeleteVisit()
-    }
+    invalidateVisitData(queryClient)
   }
 
   if (!isOpen) return null
@@ -125,8 +97,8 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
               <span className="break-words">{countryData?.name || 'Loading...'}</span>
             </DialogTitle>
             <DialogDescription className="text-sm">
-              {visitCount > 0 ? 
-                `${countryData?.restaurants?.length || 0} restaurant visits` : 
+              {restaurants.length > 0 ?
+                `${restaurants.length} restaurant visit${restaurants.length !== 1 ? 's' : ''}` :
                 'Discover this country\'s cuisine'
               }
             </DialogDescription>
@@ -140,7 +112,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
             ) : countryData ? (
               <div className="space-y-4">
                 {/* For countries with no visits - show cuisine summary */}
-                {visitCount === 0 && (
+                {restaurants.length === 0 && (
                   <Card className="border-purple-200 bg-purple-50">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base md:text-lg flex items-center gap-2">
@@ -166,7 +138,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                 )}
 
                 {/* For countries with visits - show restaurant list */}
-                {visitCount > 0 && countryData.restaurants && countryData.restaurants.length > 0 && (
+                {restaurants.length > 0 && (
                   <div className="space-y-3">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
                       <div className="flex items-center gap-2">
@@ -184,7 +156,7 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
                       </Button>
                     </div>
 
-                    {countryData.restaurants.map((visit, index) => (
+                    {restaurants.map((visit, index) => (
                       <Card key={visit.id} className="border-l-4 border-l-purple-500">
                         <CardHeader className="pb-3">
                           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
@@ -317,17 +289,24 @@ export default function CountryDrawer({ countryCode, visitCount, isOpen, onClose
       {/* Edit Visit Modal */}
       <EditVisitModal
         isOpen={editModalOpen}
-        onClose={() => setEditModalOpen(false)}
+        onClose={() => {
+          setEditModalOpen(false)
+          setSelectedVisit(null)
+        }}
         visit={selectedVisit}
-        onSuccess={handleVisitUpdated}
+        countries={countries}
+        onVisitUpdated={handleVisitUpdated}
       />
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmModal
         isOpen={deleteModalOpen}
-        onClose={() => setDeleteModalOpen(false)}
+        onClose={() => {
+          setDeleteModalOpen(false)
+          setSelectedVisit(null)
+        }}
         visit={selectedVisit}
-        onConfirm={handleVisitDeleted}
+        onVisitDeleted={handleVisitDeleted}
       />
     </>
   )
